@@ -68,7 +68,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        // F-1 修复：禁止 setAllowedOriginPatterns(["*"]) + setAllowCredentials(true) 组合
+        // （Spring Security 6 + CORS 规范：Allow-Credentials + Wildcard Origin 触发浏览器拒绝）
+        // 改为允许具体 origin 列表 + credentials（通过 CORS_ALLOWED_ORIGINS 环境变量配置）
+        // 默认仅开发环境（localhost:5173 Vite + localhost:3000 备用端口）
+        String allowedOrigins = System.getenv().getOrDefault(
+            "CORS_ALLOWED_ORIGINS",
+            "http://localhost:5173,http://localhost:3000"
+        );
+        List<String> origins = java.util.Arrays.stream(allowedOrigins.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .collect(java.util.stream.Collectors.toList());
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

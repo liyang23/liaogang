@@ -10,6 +10,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,22 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
+
+    /**
+     * F-18 修复：验证 JWT sub 对应用户仍存在且未禁用
+     * <p>Sprint 1 mock 模式：本地 Map 模拟；生产应接 user 表
+     */
+    private final java.util.Map<String, Boolean> activeUserMockMap = new java.util.concurrent.ConcurrentHashMap<>() {{
+        put("mock-sub-ROLE-0001", true);
+        put("mock-sub-ROLE-0002", true);
+        put("mock-sub-ROLE-0003", true);
+        put("mock-sub-ROLE-0004", true);
+        put("mock-sub-ROLE-0005", true);
+    }};
+    private boolean isUserActive(String sub) {
+        // Sprint 1 mock：检查本地 Map；生产应查 user 表 status='Active'
+        return activeUserMockMap.getOrDefault(sub, false);
+    }
 
 /**
  * JWT 鉴权过滤器（v0.32 OQ-12 + OQ-23）。
@@ -74,6 +91,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String preferredUsername = (String) claims.get("preferred_username");
 
             if (role != null) {
+                // F-18 修复：JWT sub claim 需 DB 验证用户存在且未停用（防 token 复用）
+                if (!isUserActive(sub)) {
+                    log.debug("JWT sub={} 用户已被禁用或删除，拒绝访问", sub);
+                    chain.doFilter(request, response);
+                    return;
+                }
                 List<SimpleGrantedAuthority> authorities = List.of(
                     new SimpleGrantedAuthority("ROLE_" + role)
                 );
@@ -95,6 +118,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    @PostConstruct
+    public void init() {
+        checkDefaultSecret();
+    }
+
+    // F-7 修复：fail-fast 检测 demo 默认密钥，避免 production 误用
+    private void checkDefaultSecret() {
+        if (jwtSecret != null && jwtSecret.startsWith("default-jwt-secret")) {
+            String profile = System.getProperty("spring.profiles.active", "");
+            if (profile.contains("prod") || profile.contains("prd")) {
+                throw new IllegalStateException(
+                    "生产环境检测到默认 JWT 密钥，请设置 LIAOGONG_JWT_SECRET 环境变量后重启。" +
+                    "当前密钥前缀=" + jwtSecret.substring(0, Math.min(20, jwtSecret.length())));
+            }
+            System.out.println("[WARN] 使用默认 JWT 密钥（仅限 dev/test profile）。生产环境必须设置 LIAOGONG_JWT_SECRET。");
+        }
     }
 
     private SecretKey secretKey() {

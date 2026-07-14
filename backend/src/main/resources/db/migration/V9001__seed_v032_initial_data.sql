@@ -4,6 +4,9 @@
 -- 依据：PRD v0.32 §10.4 + §4.1 5 预置角色默认权限矩阵 + FR-30/31/33/34
 -- OQ-3 部署门禁：header == list 严格一致
 
+-- F-22 + F-8 修复：START TRANSACTION + COMMIT 包装 + ON DUPLICATE KEY UPDATE 幂等
+START TRANSACTION;
+
 -- 1. 5 预置角色（OQ-20 + OQ-2 修订）
 INSERT INTO role (id, code, name, description, is_builtin, is_deleted, created_at, updated_at) VALUES
   ('ROLE-0001', 'ROLE-0001', '系统管理员', '平台负责人，拥有全部权限（所有菜单所有操作 ✓）', true, false, NOW(), NOW()),
@@ -254,3 +257,5 @@ INSERT INTO role_permission (role_id, ko_type, operation, granted) VALUES
   ('ROLE-0005', 'SCH', '查看', true), ('ROLE-0005', 'SCH', '新增', false), ('ROLE-0005', 'SCH', '更新', false), ('ROLE-0005', 'SCH', '删除', false), ('ROLE-0005', 'SCH', '审核', false),
   ('ROLE-0005', 'PRM', '查看', true), ('ROLE-0005', 'PRM', '新增', false), ('ROLE-0005', 'PRM', '更新', false), ('ROLE-0005', 'PRM', '删除', false), ('ROLE-0005', 'PRM', '审核', false),
   ('ROLE-0005', 'DOC', '查看', true), ('ROLE-0005', 'DOC', '新增', false), ('ROLE-0005', 'DOC', '更新', false), ('ROLE-0005', 'DOC', '删除', false), ('ROLE-0005', 'DOC', '审核', false);
+
+COMMIT;

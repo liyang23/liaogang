@@ -67,7 +67,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Result<Void>> handleAccessDenied(AccessDeniedException e) {
-        log.warn("访问被拒绝: {}", e.getMessage());
+        // F-14 修复：区分 40100（未登录）/ 40300（无权限）
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            log.warn("未登录访问受保护资源: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Result.fail(40100, "请先登录"));
+        }
+        log.warn("访问被拒绝: sub={}, msg={}",
+                authentication.getName(), e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Result.fail(40300, "无权限访问"));
     }
 

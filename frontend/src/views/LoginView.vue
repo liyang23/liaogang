@@ -7,10 +7,10 @@
       <el-form @submit.prevent="handleLogin">
         <el-alert
           v-if="mockMode"
-          title="Sprint 1 mock 模式"
-          type="info"
+          title="Sprint 1 mock 模式（仅限 dev/test profile）"
+          type="warning"
           :closable="false"
-          description="Q-I2 辽港慧应用 APIKEY + 招商云 PAAS 订阅地址未提供。当前以 mock 角色登录。"
+          description="Q-I2 辽港慧应用 APIKEY + 招商云 PAAS 订阅地址未提供。生产环境（prod profile）禁止使用 mock 登录。"
         />
         <el-form-item label="角色">
           <el-select v-model="selectedRole" placeholder="选择登录角色">
@@ -41,6 +41,12 @@ const mockMode = ref<boolean>(true) // Sprint 1 mock 模式
 
 function handleLogin() {
   if (!selectedRole.value) return
+  // F-17 修复：生产环境禁用 mock 登录
+  const mode = (import.meta.env.MODE || '')
+  if (mockMode.value && (mode === 'production' || mode === 'prod')) {
+    ElMessage.error('生产环境禁用 mock 登录，请走辽港统一认证（Q-I2）')
+    return
+  }
   auth.mockLoginAs(selectedRole.value)
   router.push('/')
 }

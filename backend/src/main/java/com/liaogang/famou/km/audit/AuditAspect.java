@@ -70,25 +70,25 @@ public class AuditAspect {
         detailMap.put("remark", detail);
         detailMap.put("args", argsStr);
 
-        // 4. 执行方法
+        // 4. 执行方法 + 失败/成功都写审计（F-12 修复）
         Object result;
+        boolean succeeded = false;
         try {
             result = joinPoint.proceed();
-        } catch (Throwable t) {
-            // 即使方法失败也记录审计
-            log.warn("方法 {} 执行失败: {}", method.getName(), t.getMessage());
-            throw t;
+            succeeded = true;
+            return result;
+        } finally {
+            // 5. 写审计日志（无论成功/失败 + 异步不阻塞业务主流程）
+            String finalAction = succeeded ? auditAnnotation.action() : auditAnnotation.action() + "_FAILED";
+            Map<String, Object> finalDetail = new HashMap<>(detailMap);
+            finalDetail.put("result", succeeded ? "SUCCESS" : "FAILURE");
+            AuditLog auditLog = AuditLog.builder()
+                .action(finalAction)
+                .userId(userSub)
+                .detail(finalDetail.toString())
+                .reason(detail)
+                .build();
+            auditLogService.recordAsync(auditLog);
         }
-
-        // 5. 写审计日志（异步不阻塞业务主流程）
-        AuditLog auditLog = AuditLog.builder()
-            .action(auditAnnotation.action())
-            .userId(userSub)
-            .detail(detailMap.toString())
-            .reason(detail)
-            .build();
-        auditLogService.recordAsync(auditLog);
-
-        return result;
     }
 }

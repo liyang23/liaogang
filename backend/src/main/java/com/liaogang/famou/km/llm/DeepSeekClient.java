@@ -8,8 +8,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +29,7 @@ import java.util.Map;
  *   <li>rationale: 理由说明</li>
  * </ul>
  *
- * <p>NFR-28：LLM 建议响应 ≤ 5s
+ * <p>NFR-28：LLM 建议响应 ≤ 5s（F-2 修复：RestTemplateBuilder 配置 connect/read timeout）
  */
 @Slf4j
 @Service
@@ -45,7 +47,22 @@ public class DeepSeekClient {
     @Value("${app.llm.timeout-seconds:5}")
     private int timeoutSeconds;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    // F-2 修复：使用 RestTemplateBuilder 配置 connect/read timeout = 5s（NFR-28 承诺）
+    private final RestTemplate restTemplate;
+    // F-11 修复：用于解析 LLM 响应 JSON（替代 mock 解析）
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+    public DeepSeekClient(RestTemplateBuilder builder,
+                          com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+    public DeepSeekClient(RestTemplateBuilder builder) {
+        this.restTemplate = builder
+            .setConnectTimeout(Duration.ofSeconds(5))
+            .setReadTimeout(Duration.ofSeconds(5))
+            .build();
+    }
 
     /**
      * 调用 LLM 生成冲突建议（OQ-9 验收点）

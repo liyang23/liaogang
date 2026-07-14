@@ -26,11 +26,12 @@ export function getCodeVerifierFromUrl(): string | null {
 
 export function saveCodeVerifier(codeVerifier: string): void {
   if (typeof window === 'undefined') return
-  sessionStorage.setItem(STORAGE_KEY, codeVerifier)
+  // F-10 修复：先 setItem expiry 再 setItem codeVerifier（避免崩溃时缓存泄露无过期）
   sessionStorage.setItem(
     STORAGE_EXPIRY_KEY,
     String(Date.now() + TTL_SECONDS * 1000)
   )
+  sessionStorage.setItem(STORAGE_KEY, codeVerifier)
 }
 
 export function loadCodeVerifier(): string | null {

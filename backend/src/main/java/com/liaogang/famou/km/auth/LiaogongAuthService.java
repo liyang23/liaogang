@@ -3,6 +3,7 @@ package com.liaogang.famou.km.auth;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -146,10 +147,24 @@ public class LiaogongAuthService {
         ResponseEntity<Map> responseEntity = restTemplate.exchange(
                 url, HttpMethod.POST, entity, Map.class);
 
-        if (responseEntity == null || !responseEntity.getStatusCode().is2xxSuccessful()) {
-            log.error("调用招商云 PAAS getUserInfoByCode 失败: status={}",
-                    responseEntity != null ? responseEntity.getStatusCode() : "null");
-            throw new RuntimeException("getUserInfoByCode 调用失败");
+        if (responseEntity == null) {
+            log.error("调用招商云 PAAS getUserInfoByCode 无响应");
+            throw new com.liaogang.famou.km.common.BusinessException(50001, "getUserInfoByCode 调用无响应");
+        }
+        // F-13 修复：区分 401（授权）/ 429（限流）/ 5xx（服务错误）异常
+        int statusCode = responseEntity.getStatusCode().value();
+        if (statusCode == 401) {
+            log.error("调用招商云 PAAS getUserInfoByCode 401 授权失败（APIKEY 错误或过期）");
+            throw new com.liaogang.famou.km.common.BusinessException(40101, "getUserInfoByCode 授权失败");
+        } else if (statusCode == 429) {
+            log.error("调用招商云 PAAS getUserInfoByCode 429 限流");
+            throw new com.liaogang.famou.km.common.BusinessException(42901, "getUserInfoByCode 限流");
+        } else if (statusCode >= 500) {
+            log.error("调用招商云 PAAS getUserInfoByCode {} 服务错误", statusCode);
+            throw new com.liaogang.famou.km.common.BusinessException(50099, "getUserInfoByCode 服务错误");
+        } else if (!responseEntity.getStatusCode().is2xxSuccessful()) {
+            log.error("调用招商云 PAAS getUserInfoByCode 失败: status={}", statusCode);
+            throw new com.liaogang.famou.km.common.BusinessException(50099, "getUserInfoByCode 调用失败");
         }
 
         @SuppressWarnings("unchecked")

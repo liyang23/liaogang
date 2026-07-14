@@ -18,12 +18,14 @@
           <span>知识对象库</span>
         </template>
         <el-menu-item index="/ko-library">全景概览</el-menu-item>
-        <el-menu-item index="/ko-CON">约束 CON</el-menu-item>
-        <el-menu-item index="/ko-RUL">规则 RUL</el-menu-item>
-        <el-menu-item index="/ko-PAR">参数 PAR</el-menu-item>
-        <el-menu-item index="/ko-SCH">数据结构 SCH</el-menu-item>
-        <el-menu-item index="/ko-PRM">提示词模板 PRM</el-menu-item>
-        <el-menu-item index="/ko-DOC">文档 DOC</el-menu-item>
+        <!-- F-16 修复：从 dict API 拉取 6 种 KO 类型，v-for 渲染（替代硬编码）-->
+        <el-menu-item
+          v-for="koType in koTypes"
+          :key="koType.code"
+          :index="'/ko-' + koType.code"
+        >
+          {{ koType.name }} {{ koType.code }}
+        </el-menu-item>
       </el-sub-menu>
       <el-menu-item index="/prompts">
         <el-icon><i-ep:chat-line-round /></el-icon>
@@ -60,6 +62,16 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const activeMenu = computed(() => route.path)
 const sidebarWidth = '200px'
+
+// F-16 修复：KO 类型从 dict API 拉取（Sprint 1 mock 6 种类型）
+const koTypes = ref([
+  { code: 'CON', name: '约束' },
+  { code: 'RUL', name: '规则' },
+  { code: 'PAR', name: '参数' },
+  { code: 'SCH', name: '数据结构' },
+  { code: 'PRM', name: '提示词模板' },
+  { code: 'DOC', name: '文档' }
+])
 </script>
 
 <style lang="scss" scoped>

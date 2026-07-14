@@ -5,7 +5,8 @@
 # 镜像仓库（OQ-I3 待 owner 确认）
 image:
   repository: registry.example.com/km-platform
-  pullPolicy: IfNotPresent
+  # F-25 修复：Always（确保部署时拉取最新镜像，避免使用本地旧版本缓存）
+  pullPolicy: Always
   tag: "1.0.0-SNAPSHOT"
 
 # 微服务配置

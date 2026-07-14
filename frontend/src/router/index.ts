@@ -3,6 +3,9 @@ import type { RouteRecordRaw } from 'vue-router'
 
 // 路由守卫：基于 5 预置角色默认权限矩阵（v0.32 §4.1）
 // 实际权限校验在 U5 实施时接入后端 /api/auth/me 接口
+// F-5 + F-24 修复：top-level import useAuthStore（替代 require() 循环引用与 ESM 不稳定）
+import { useAuthStore } from '@/stores/auth'
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/login',
@@ -114,12 +117,5 @@ router.beforeEach(async (to) => {
   }
   return true
 })
-
-// 辅助函数：避免循环依赖
-function useAuthStore() {
-  // 动态 import 避免在 router 加载阶段触发 Pinia
-  const { useAuthStore } = require('@/stores/auth')
-  return useAuthStore()
-}
 
 export default router

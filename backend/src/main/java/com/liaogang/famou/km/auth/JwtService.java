@@ -59,6 +59,24 @@ public class JwtService {
             .getBody();
     }
 
+    @PostConstruct
+    public void init() {
+        checkDefaultSecret();
+    }
+
+    // F-7 修复：fail-fast 检测 demo 默认密钥，避免 production 误用
+    private void checkDefaultSecret() {
+        if (jwtSecret != null && jwtSecret.startsWith("default-jwt-secret")) {
+            String profile = System.getProperty("spring.profiles.active", "");
+            if (profile.contains("prod") || profile.contains("prd")) {
+                throw new IllegalStateException(
+                    "生产环境检测到默认 JWT 密钥，请设置 LIAOGONG_JWT_SECRET 环境变量后重启。" +
+                    "当前密钥前缀=" + jwtSecret.substring(0, Math.min(20, jwtSecret.length())));
+            }
+            System.out.println("[WARN] 使用默认 JWT 密钥（仅限 dev/test profile）。生产环境必须设置 LIAOGONG_JWT_SECRET。");
+        }
+    }
+
     private SecretKey secretKey() {
         byte[] bytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
         if (bytes.length < 32) {

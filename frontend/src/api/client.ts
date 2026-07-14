@@ -1,5 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
+// F-15 修复：通过 router.push 跳转而非 window.location.href（保留 Pinia 状态）
+import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
 
 /**
@@ -39,7 +41,7 @@ http.interceptors.response.use(
       const auth = useAuthStore()
       auth.logout()
       ElMessage.error('登录已过期，请重新登录')
-      window.location.href = '/login'
+      router.push('/login')
     } else {
       const msg = error.response?.data?.msg || error.message || '请求失败'
       ElMessage.error(msg)

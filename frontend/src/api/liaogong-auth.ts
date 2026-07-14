@@ -60,6 +60,16 @@ export async function mockLogin(role: string): Promise<LiaogongTokenResponse> {
 }
 
 export async function logout(): Promise<void> {
-  await post('/auth/logout')
-  clearCodeVerifier()
+  // F-19 修复：前端主动清除 localStorage 与 codeVerifier 缓存
+  // 生产环境应接服务端 token 黑名单（Redis 记录 jti + 短 TTL）防止 token 残留滥用
+  try {
+    await post('/auth/logout')
+  } catch (e) {
+    console.warn('后端 logout 调用失败，继续清理本地状态:', e)
+  } finally {
+    clearCodeVerifier()
+    // 触发 store 内的 logout 逻辑（auth.logout()）
+    const { useAuthStore } = await import('@/stores/auth')
+    useAuthStore().logout()
+  }
 }

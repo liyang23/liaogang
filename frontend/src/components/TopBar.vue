@@ -9,11 +9,11 @@
       </el-breadcrumb>
     </div>
     <div class="topbar__actions">
-      <el-tooltip content="通知" placement="bottom">
-        <el-badge :value="3" class="topbar__notification">
+      <el-badge :value="3" class="topbar__notification">
+        <el-tooltip content="通知" placement="bottom">
           <el-button :icon="Bell" circle />
-        </el-badge>
-      </el-tooltip>
+        </el-tooltip>
+      </el-badge>
       <el-dropdown @command="handleUserCommand">
         <span class="topbar__user">
           <el-avatar :size="28">{{ userInitials }}</el-avatar>
@@ -46,7 +46,7 @@ const breadcrumbs = computed(() => {
   return segments.slice(1) // 去掉第一段（总览）
 })
 
-const displayName = computed(() => auth.displayName || '未登录')
+const displayName = computed(() => auth.displayName || (auth.token ? '会话失效' : '未登录'))
 const userInitials = computed(() => displayName.value.slice(0, 2))
 const currentRoleLabel = computed(() => {
   const map: Record<string, string> = {

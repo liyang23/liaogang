@@ -3,12 +3,14 @@ package com.liaogang.famou.km.audit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 审计日志 Service（v0.32 PRD §5.2.6）。
@@ -27,7 +29,17 @@ public class AuditLogService {
     @Value("${app.audit.retention-months:12}")
     private int retentionMonths;
 
-    private final AtomicInteger counter = new AtomicInteger(0);
+    // F-4 修复：使用 Redis INCR 替代 AtomicInteger（Sprint 1 mock 模式用内存 Map）
+    private final java.util.Map<String, Long> mockCounterMap = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, Long> mockExpiryMap = new java.util.concurrent.ConcurrentHashMap<>();
+    private final StringRedisTemplate redisTemplate;
+    private final boolean useRedisMock;
+
+    public AuditLogService(StringRedisTemplate redisTemplate,
+                           @Value("${app.audit.use-redis-mock:true}") boolean useRedisMock) {
+        this.redisTemplate = redisTemplate;
+        this.useRedisMock = useRedisMock;
+    }
 
     /**
      * 同步写审计日志
@@ -52,11 +64,29 @@ public class AuditLogService {
     }
 
     /**
-     * 生成审计 ID（格式 AUDIT-{YYYYMMDD}-{NNNNNN}，按天独立自增）
+     * F-4 修复：生成审计 ID（格式 AUDIT-{YYYYMMDD}-{NNNNNN}，按天独立自增）。
+     * <p>使用 Redis INCR（Sprint 1 mock 模式 fallback 到内存 ConcurrentHashMap 模拟 INCR 语义）
      */
     private String generateId() {
-        String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        int n = counter.incrementAndGet() % 1000000;
-        return String.format("AUDIT-%s-%06d", date, n);
+        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String key = "km:audit:counter:" + date;
+        long n;
+        if (useRedisMock || redisTemplate == null) {
+            // mock 模式（带 31 天过期清理）
+            n = mockCounterMap.compute(key, (k, v) -> (v == null) ? 1L : v + 1);
+            mockExpiryMap.compute(key, (k, v) -> {
+                if (v == null) {
+                    return System.currentTimeMillis() + TimeUnit.DAYS.toMillis(31);
+                }
+                return v;
+            });
+        } else {
+            // 生产模式（Redis INCR 原子递增，分布式唯一）
+            n = redisTemplate.opsForValue().increment(key);
+            if (n != null && n == 1L) {
+                redisTemplate.expire(key, 31, TimeUnit.DAYS);
+            }
+        }
+        return String.format("AUDIT-%s-%06d", date, n % 1000000);
     }
 }

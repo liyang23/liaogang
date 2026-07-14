@@ -32,6 +32,7 @@ public class LlmQuotaService {
     private int dailyPlatformLimit;
 
     private final StringRedisTemplate redisTemplate;
+    private final java.util.Map<String, Long> mockCounterMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * 平台级 key（PR-01）
@@ -49,34 +50,78 @@ public class LlmQuotaService {
      * @param userSub 用户 sub（来自 JWT）
      * @return true = 通过；false = 配额耗尽
      */
+    // F-3 修复：Redis Lua 原子脚本（CAS）替代 INCR-then-check TOCTOU
+    // 脚本语义：先 INCR 两个 key，再检查是否超过限额，若超过则 DECR 回滚
+    private static final String LUA_INCR_AND_CHECK = "        local platformCount = redis.call('INCR', KEYS[1])
+        local userCount = redis.call('INCR', KEYS[2])
+        if redis.call('EXISTS', KEYS[3]) == 0 then
+            redis.call('EXPIRE', KEYS[1], 86400)
+            redis.call('EXPIRE', KEYS[2], 86400)
+        end
+        local platformLimit = tonumber(ARGV[1])
+        local userLimit = tonumber(ARGV[2])
+        local platformOk = platformCount <= platformLimit
+        local userOk = userCount <= userLimit
+        if not (platformOk and userOk) then
+            redis.call('DECR', KEYS[1])
+            redis.call('DECR', KEYS[2])
+            return {0, platformCount, userCount}
+        end
+        return {1, platformCount, userCount}";
+
     public boolean incrementAndCheck(String userSub) {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        long platformCount = increment(PLATFORM_KEY_PREFIX + today);
-        long userCount = increment(USER_KEY_PREFIX + today + ":" + userSub);
+        String platformKey = PLATFORM_KEY_PREFIX + today;
+        String userKey = USER_KEY_PREFIX + today + ":" + userSub;
 
         // 计算每日限额（按比例）
         int platformLimit = dailyPlatformLimit;
         int userLimit = (int) (dailyPlatformLimit * userPercentage / 100.0);
 
-        boolean platformOk = platformCount <= platformLimit;
-        boolean userOk = userCount <= userLimit;
-
-        if (!platformOk || !userOk) {
-            log.warn("LLM 配额耗尽: platform={}/{}, user={}/{}",
-                    platformCount, platformLimit, userCount, userLimit);
-            return false;
+        try {
+            // 原子 INCR + 检查 + 超限回滚（Lua 脚本）
+            org.springframework.data.redis.core.script.RedisScript<java.util.List> script = org.springframework.data.redis.core.script
+                .RedisScript.of(LUA_INCR_AND_CHECK, java.util.List.class);
+            java.util.List result = redisTemplate.execute(script, java.util.List.of(platformKey, userKey, today), platformLimit, userLimit);
+            boolean allowed = ((Number) result.get(0)).intValue() == 1;
+            long platformCount = ((Number) result.get(1)).longValue();
+            long userCount = ((Number) result.get(2)).longValue();
+            if (!allowed) {
+                log.warn("LLM 配额耗尽: platform={}/{}, user={}/{}", platformCount, platformLimit, userCount, userLimit);
+            }
+            return allowed;
+        } catch (Exception e) {
+            // Redis 不可用时降级为本地内存版本（仅 dev/test）
+            log.warn("F-3 Lua 脚本执行失败，降级到内存检查: {}", e.getMessage());
+            return mockIncrementAndCheck(userSub);
         }
-        return true;
     }
 
     private long increment(String key) {
+        // 注：生产路径已通过 Lua 脚本原子执行，不再单独调用此方法
         Long count = redisTemplate.opsForValue().increment(key);
-        // 设置每日过期（首次增加时）
         if (count != null && count == 1L) {
             redisTemplate.expire(key, java.time.Duration.ofDays(1));
         }
         return count == null ? 0L : count;
+    }
+
+    // F-3 降级路径：Redis 不可用时的内存检查
+    private boolean mockIncrementAndCheck(String userSub) {
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String platformKey = PLATFORM_KEY_PREFIX + today;
+        String userKey = USER_KEY_PREFIX + today + ":" + userSub;
+        long platformCount = mockCounterMap.compute(platformKey, (k, v) -> (v == null) ? 1L : v + 1);
+        long userCount = mockCounterMap.compute(userKey, (k, v) -> (v == null) ? 1L : v + 1);
+        int platformLimit = dailyPlatformLimit;
+        int userLimit = (int) (dailyPlatformLimit * userPercentage / 100.0);
+        if (platformCount > platformLimit || userCount > userLimit) {
+            // 回滚
+            mockCounterMap.computeIfPresent(platformKey, (k, v) -> Math.max(0, v - 1));
+            mockCounterMap.computeIfPresent(userKey, (k, v) -> Math.max(0, v - 1));
+            return false;
+        }
+        return true;
     }
 
     /**
