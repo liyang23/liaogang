@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Minimal mvnw script - 包装系统 Maven
+# 用法：./mvnw [maven args]
+exec mvn "$@"
