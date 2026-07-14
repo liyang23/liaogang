@@ -1,0 +1,17 @@
+apiVersion: v2
+name: km-platform
+description: 辽港伐谋 KM 平台 - 港口运筹优化算法知识管理平台
+type: application
+version: 0.1.0
+appVersion: 1.0.0
+home: https://github.com/liaogang/famou-km
+sources:
+  - https://github.com/liaogang/famou-km
+keywords:
+  - km-platform
+  - knowledge-management
+  - port-optimization
+  - prompt-composition
+maintainers:
+  - name: liaogang-famou-km
+    email: dev@liaogang-famou.example.cn
