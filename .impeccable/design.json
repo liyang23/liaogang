@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-14T12:30:00Z",
+  "title": "Design System: 辽港伐谋知识管理平台",
+  "extensions": {
+    "colorMeta": {
+      "port-blue":      { "role": "primary",   "displayName": "Port Blue",       "canonical": "#0F4C75" },
+      "signal-orange":  { "role": "secondary", "displayName": "Signal Orange",  "canonical": "#ED8936" },
+      "signal-red":     { "role": "danger",     "displayName": "Signal Red",      "canonical": "#C53030" },
+      "signal-green":    { "role": "success",    "displayName": "Signal Green",   "canonical": "#2F855A" },
+      "signal-yellow":   { "role": "warning",    "displayName": "Signal Yellow",  "canonical": "#D69E2E" },
+      "rail-bg":         { "role": "surface",    "displayName": "Rail Dark",      "canonical": "#0F1E2E" },
+      "canvas-bg":      { "role": "background",  "displayName": "Canvas",         "canonical": "#F5F6F8" },
+      "paper-bg":        { "role": "surface",    "displayName": "Paper",           "canonical": "#FFFFFF" },
+      "text-primary":    { "role": "text",        "displayName": "Text Primary",   "canonical": "#1A2332" },
+      "text-secondary":   { "role": "text",        "displayName": "Text Secondary","canonical": "#5A6373" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page titles and logo — Noto Serif SC authoritative serif" },
+      "body":    { "displayName": "Body",    "purpose": "Standard body text — Noto Sans SC at 13px/1.5" },
+      "label":   { "displayName": "Label",   "purpose": "Table headers, metadata — uppercase JetBrains Mono 11px" },
+      "mono":    { "displayName": "Mono",    "purpose": "KO IDs, version strings, technical values — JetBrains Mono 10-11px" }
+    },
+    "shadows": [
+      { "name": "modal",       "value": "0 8px 32px rgba(0,0,0,0.2)",  "purpose": "Modal dialog only. Cards and panels are flat." },
+      { "name": "timeline-node", "value": "0 0 0 1px var(--port-blue)", "purpose": "Timeline node ring to separate node from connecting line." }
+    ],
+    "motion": [
+      { "name": "ease-standard",  "value": "cubic-bezier(0.4, 0, 0.2, 1)",  "purpose": "Default state transition easing." },
+      { "name": "ease-out-quart","value": "cubic-bezier(0.25, 0.46, 0.45, 0.94)", "purpose": "Prefer exponential ease-out for interactive elements. No bounce." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default primary action button. Port blue background, white text, 2px radius.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">主要操作</button>",
+      "css": ".ds-btn-primary { background: #0F4C75; color: #fff; border: none; border-radius: 2px; padding: 6px 12px; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; cursor: pointer; transition: background 0.15s; } .ds-btn-primary:hover { background: #1E6A9D; } .ds-btn-primary:focus-visible { outline: 2px solid #ED8936; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default secondary button. White background, border, dark text.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">次要操作</button>",
+      "css": ".ds-btn-secondary { background: #fff; color: #1A2332; border: 1px solid #DCE0E6; border-radius: 2px; padding: 6px 12px; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; cursor: pointer; } .ds-btn-secondary:hover { background: #EEF2F7; } .ds-btn-secondary:focus-visible { outline: 2px solid #ED8936; outline-offset: 2px; }"
+    },
+    {
+      "name": "Warn Button",
+      "kind": "button",
+      "refersTo": "button-warn",
+      "description": "High-attention or destructive action button. Signal orange background.",
+      "html": "<button class=\"ds-btn ds-btn-warn\">警告操作</button>",
+      "css": ".ds-btn-warn { background: #ED8936; color: #fff; border: none; border-radius: 2px; padding: 6px 12px; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; cursor: pointer; transition: background 0.15s; } .ds-btn-warn:hover { background: #C26418; } .ds-btn-warn:focus-visible { outline: 2px solid #ED8936; outline-offset: 2px; }"
+    },
+    {
+      "name": "KO ID Tag",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Monospace KO identifier shown in tables and detail views. Port blue text on light blue-gray background.",
+      "html": "<span class=\"ds-ko-id\">KO-CON-0004</span>",
+      "css": ".ds-ko-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #0F4C75; background: #EEF2F7; border-radius: 2px; padding: 1px 6px; }"
+    },
+    {
+      "name": "Status Tag - Hard",
+      "kind": "chip",
+      "refersTo": "chip-hard",
+      "description": "Hard constraint status tag. Red background, white text.",
+      "html": "<span class=\"ds-tag ds-tag-hard\">Hard</span>",
+      "css": ".ds-tag-hard { background: #FED7D7; color: #C53030; border-radius: 2px; padding: 1px 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }"
+    },
+    {
+      "name": "Status Tag - Soft",
+      "kind": "chip",
+      "refersTo": "chip-soft",
+      "description": "Soft constraint status tag. Orange-tinted background.",
+      "html": "<span class=\"ds-tag ds-tag-soft\">Soft</span>",
+      "css": ".ds-tag-soft { background: #FEEBC8; color: #C26418; border-radius: 2px; padding: 1px 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standard content card. White background, 1px border, 2px radius, no shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\">卡片标题</div><div class=\"ds-card-body\">卡片内容区域</div></div>",
+      "css": ".ds-card { background: #fff; border: 1px solid #DCE0E6; border-radius: 2px; padding: 16px; } .ds-card-header { font-size: 13px; font-weight: 600; color: #1A2332; padding-bottom: 10px; border-bottom: 1px solid #DCE0E6; margin-bottom: 12px; } .ds-card-body { font-size: 13px; color: #5A6373; }"
+    },
+    {
+      "name": "Data Table",
+      "kind": "table",
+      "refersTo": "table",
+      "description": "Standard data table. Collapsed borders, JetBrains Mono for IDs, 2px radius wrapper.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>对象 ID</th><th>标题</th><th>状态</th></tr></thead><tbody><tr><td class=\"ds-ko-id\">KO-CON-0004</td><td>即到即靠约束</td><td><span class=\"ds-tag ds-tag-hard\">Hard</span></td></tr></tbody></table>",
+      "css": ".ds-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: auto; } .ds-table th { text-align: left; padding: 8px 10px; background: #FAFBFC; border-bottom: 1px solid #DCE0E6; font-weight: 500; color: #5A6373; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; font-family: 'JetBrains Mono', monospace; } .ds-table td { padding: 9px 10px; border-bottom: 1px solid #ECEEF1; color: #1A2332; } .ds-table tr:hover td { background: #FAFBFC; }"
+    },
+    {
+      "name": "Navigation Rail Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Nav item in the dark rail. Icon + label + count, left 2px orange border when active.",
+      "html": "<div class=\"ds-nav-item ds-nav-item-active\"><span class=\"ds-nav-icon\">◬</span><span>知识对象库</span><span class=\"ds-nav-count\">277</span></div>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; color: #8FA0B5; font-size: 13px; cursor: pointer; border-left: 2px solid transparent; transition: all 0.1s; } .ds-nav-item:hover { color: #fff; background: rgba(255,255,255,0.03); } .ds-nav-item-active { color: #fff; background: #173552; border-left-color: #ED8936; } .ds-nav-icon { font-size: 11px; color: #ED8936; width: 14px; text-align: center; } .ds-nav-count { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8FA0B5; } .ds-nav-item-active .ds-nav-count { color: #ED8936; }"
+    },
+    {
+      "name": "Modal Dialog",
+      "kind": "modal",
+      "refersTo": "modal",
+      "description": "Standard modal dialog. Paper white, shadow, 2px radius.",
+      "html": "<div class=\"ds-modal-overlay\"><div class=\"ds-modal\"><div class=\"ds-modal-header\"><h3>对话框标题</h3><button class=\"ds-modal-close\">×</button></div><div class=\"ds-modal-body\">对话框内容</div><div class=\"ds-modal-footer\"><button class=\"ds-btn ds-btn-secondary\">取消</button><button class=\"ds-btn ds-btn-primary\">确认</button></div></div></div>",
+      "css": ".ds-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; } .ds-modal { background: #fff; border: 1px solid #DCE0E6; border-radius: 2px; width: min(480px, 92vw); box-shadow: 0 8px 32px rgba(0,0,0,0.2); } .ds-modal-header { padding: 14px 18px; border-bottom: 1px solid #DCE0E6; display: flex; align-items: center; justify-content: space-between; background: #FAFBFC; } .ds-modal-header h3 { font-size: 14px; font-weight: 700; color: #1A2332; } .ds-modal-close { cursor: pointer; font-size: 18px; color: #8A92A0; background: none; border: none; } .ds-modal-body { padding: 18px; } .ds-modal-footer { padding: 12px 18px; border-top: 1px solid #DCE0E6; display: flex; justify-content: flex-end; gap: 8px; background: #FAFBFC; }"
+    },
+    {
+      "name": "Toast Notification",
+      "kind": "toast",
+      "refersTo": "toast",
+      "description": "Toast notification with left accent bar. Stacked bottom-right.",
+      "html": "<div class=\"ds-toast ds-toast-success\"><div class=\"ds-toast-icon\">✓</div><div class=\"ds-toast-body\"><div class=\"ds-toast-title\">操作完成</div><div class=\"ds-toast-msg\">约束已通过审核</div></div><button class=\"ds-toast-close\">×</button></div>",
+      "css": ".ds-toast { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: #fff; border: 1px solid #DCE0E6; border-radius: 2px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 280px; max-width: 400px; position: relative; } .ds-toast::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; border-radius: 2px 0 0 2px; } .ds-toast-success::before { background: #2F855A; } .ds-toast-success .ds-toast-icon { color: #2F855A; } .ds-toast-error::before { background: #C53030; } .ds-toast-error .ds-toast-icon { color: #C53030; } .ds-toast-warning::before { background: #ED8936; } .ds-toast-warning .ds-toast-icon { color: #ED8936; } .ds-toast-info::before { background: #0F4C75; } .ds-toast-info .ds-toast-icon { color: #0F4C75; } .ds-toast-icon { font-size: 14px; font-weight: 700; width: 18px; flex-shrink: 0; } .ds-toast-body { flex: 1; min-width: 0; } .ds-toast-title { font-size: 13px; font-weight: 600; color: #1A2332; } .ds-toast-msg { font-size: 12px; color: #5A6373; margin-top: 2px; } .ds-toast-close { cursor: pointer; font-size: 14px; color: #8A92A0; background: none; border: none; flex-shrink: 0; }"
+    },
+    {
+      "name": "Form Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard text input. White background, 1px border, 2px radius.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"输入知识对象名称...\">",
+      "css": ".ds-input { width: 100%; padding: 6px 10px; border: 1px solid #DCE0E6; border-radius: 2px; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; color: #1A2332; background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box; } .ds-input::placeholder { color: #8A92A0; } .ds-input:focus { border-color: #0F4C75; box-shadow: 0 0 0 2px rgba(15,76,117,0.1); }"
+    },
+    {
+      "name": "KO Type Dot",
+      "kind": "chip",
+      "refersTo": "dot",
+      "description": "8x8px colored square indicating KO type. Color-coded per type system.",
+      "html": "<span class=\"ds-dot ds-dot-con\"></span><span class=\"ds-dot ds-dot-par\"></span><span class=\"ds-dot ds-dot-ont\"></span>",
+      "css": ".ds-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; } .ds-dot-con { background: #C53030; } .ds-dot-par { background: #2F855A; } .ds-dot-ont { background: #6B46C1; } .ds-dot-rul { background: #ED8936; } .ds-dot-prm { background: #FBB6CE; } .ds-dot-doc { background: #8A92A0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Master Scheduler's Log",
+    "overview": "A living archive of operational wisdom for dock operations experts at 1440p workstations. Dense, functional, industrial. The platform serves long-running data-intensive sessions where errors are costly and clarity is safety. Every pixel earns its place. Not a SaaS dashboard, not an AI startup prototype — a professional instrument panel for port optimization.",
+    "keyCharacteristics": [
+      "Dark rail navigation with orange active indicator establishes control-panel authority",
+      "KO type color system consistently applied across dots, badges, and type tags",
+      "2px border-radius throughout — sharp, professional, not consumer-app soft",
+      "Flat by default — shadows only on elevated elements (modals, toasts)",
+      "JetBrains Mono for all technical identifiers: KO IDs, version strings, parameter values",
+      "Data density is intentional — tables show 9 columns when the workflow requires it",
+      "Precheck panel surfaces conflicts before rendering — error prevention is structural"
+    ],
+    "rules": [
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadows appear only on elevated elements (modals, toasts, overlays). Cards and stat panels use borders, not drop shadows.", "section": "elevation" },
+      { "name": "The Density-is-a-Feature Rule", "body": "This is not a consumer-grade simplified UI. Tables show 9 columns. Navigation shows KO type counts. The information density is intentional. Do not strip data from tables to make it 'cleaner'.", "section": "overview" },
+      { "name": "The Mono-Over-Mono Rule", "body": "Technical identifiers (KO IDs, version strings, parameter values) are always JetBrains Mono. Body text, even when technical, uses Noto Sans SC unless it is an identifier.", "section": "typography" },
+      { "name": "The KO Color Rule", "body": "All six KO types have a consistent color assignment. Color is always paired with text label and icon shape, never color alone (colorblind accessibility).", "section": "colors" },
+      { "name": "The No-Guesswork-About-State Rule", "body": "KO status, conflict level, version number always legible. Never ambiguous. The expert trusts the instrument panel, not inference.", "section": "overview" }
+    ],
+    "dos": [
+      "Do use dark rail navigation with orange active indicator",
+      "Do show KO type counts in the nav sub-menu",
+      "Do use 2px border-radius throughout",
+      "Do use JetBrains Mono for all technical identifiers",
+      "Do use the KO type color system consistently",
+      "Do pair color with text label and icon shape on conflict indicators",
+      "Do use table-layout: auto for data tables",
+      "Do show the precheck panel before rendering",
+      "Do use the triage panel layout for knowledge governance"
+    ],
+    "donts": [
+      "Don't use pastel cards with rounded-everything",
+      "Don't use dark theme with neon accents",
+      "Don't use cream/warm-neutral backgrounds",
+      "Don't use border-left greater than 1px as colored accent on cards",
+      "Don't use gradient text",
+      "Don't use glassmorphism",
+      "Don't use identical card grids for KO type entries",
+      "Don't use tiny uppercase tracked eyebrows above every section",
+      "Don't use numbered section markers as default scaffolding",
+      "Don't use display: block on table cell elements",
+      "Don't use overflow: hidden on .content",
+      "Don't use table-layout: fixed",
+      "Don't use max-width: 0 on table cells",
+      "Don't use bounce/elastic easing",
+      "Don't show the tweaks panel in production"
+    ]
+  }
+}

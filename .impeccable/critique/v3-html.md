@@ -1,0 +1,128 @@
+# Critique Report: 辽港伐谋知识管理平台 HTML 原型 V3
+
+## Design Health Score
+
+| # | Heuristic | Score | Key Issue |
+|---|-----------|-------|-----------|
+| 1 | Visibility of System Status | 3 | Loading/toast states defined; breadcrumb navigation present; KO status tags visible |
+| 2 | Match System / Real World | 3 | Domain terminology (KO, CON, RUL, PAR, ONT, PRM, DOC) is internally consistent; breadcrumb IA matches PRD |
+| 3 | User Control and Freedom | 2 | Modal dialogs lack keyboard dismiss (Esc); no undo/redo; back navigation relies on browser chrome |
+| 4 | Consistency and Standards | 3 | Mostly consistent button hierarchy, table patterns, pagination; minor variance in toolbar layouts |
+| 5 | Error Prevention | 3 | Form validation present; confirmation dialogs for destructive actions; destructive confirm uses browser `confirm()` not styled dialog |
+| 6 | Recognition Rather Than Recall | 3 | Icons have text labels in nav; KO IDs are monospace and color-coded by type; filters visible in toolbar |
+| 7 | Flexibility and Efficiency | 1 | No keyboard shortcuts; no bulk selection; no power-user paths; one-item-at-a-time workflows |
+| 8 | Aesthetic and Minimalist Design | 2 | Dense but functional; some noise (tweaks panel is decorative prototype tooling); stat cards are uniform-sized despite different data importance |
+| 9 | Error Recovery | 2 | Toast notifications exist; but error messages are generic in places; no inline field-level error styling |
+| 10 | Help and Documentation | 1 | No contextual help; no tooltips on domain terms; no guided tours; audit log has no column explanations |
+| **Total** | | **23/40** | **Acceptable** |
+
+## Anti-Patterns Verdict
+
+**Start here. Does this look AI-generated?**
+
+**LLM assessment**: This prototype is clearly a human-crafted internal tool with a coherent industrial aesthetic. It avoids most AI slop tells. However, it has several specific anti-pattern violations worth addressing:
+
+1. **Side-stripe borders** (8 instances detected): The `border-left: 3px solid` pattern on cards is the most visible AI slop tell. In this prototype, it appears on stat cards (line 317), library stat cards (line 548), KO type cards (lines 864-870), and governance group titles (line 548). These are decorative left-border accents on cards, which is the AI signature move. The stat-card `::before` pseudo-element approach (line 254-256) is the correct implementation — the 3px left border on `.lib-stat` and similar cards is not.
+
+2. **Bounce easing** (line 761): `cubic-bezier(.34, 1.56, .64, 1)` on the tweaks panel toggle switch is the classic bounce-elastic feel. Line 519 has a `pulse` animation on the LIVE indicator, which is acceptable for a status indicator but should not appear on interactive elements.
+
+3. **Numbered section markers**: The 6-type KO library uses a uniform 3-column card grid (`.lib-type-card`) that has no sequence information — but the PRD appendix explicitly rejects identical card grids. The cards are actually identical in structure which contradicts the anti-reference.
+
+4. **Dark glow** (line 377): The `box-shadow: 0 2px 8px rgba(15,76,117,0.12)` on hover is a subtle colored glow on a card — borderline, but it's on hover so it reads as purposeful feedback rather than decorative.
+
+5. **Em-dash overuse** (15 instances): The body text has em-dashes which violates the no-em-dash rule. Looking at the prototype, this likely comes from the PRD text embedded in the prototype — the prototype is a direct representation of the PRD requirements.
+
+**Deterministic scan**: 13 findings total (exit code 2):
+- 8× side-tab accent border (warning severity) — lines 317, 548, 864, 866, 868, 870, 3545, 4018
+- 1× border-accent-on-rounded (warning) — line 525
+- 1× bounce-easing (warning) — line 761
+- 1× em-dash-overuse (warning) — 15 instances in body text
+- 1× numbered-section-markers (advisory) — sequence 01-06
+- 1× dark-glow (warning) — line 377
+
+The side-tab findings at lines 3545 and 4018 are in the JS-tweaks panel, which is prototype scaffolding — not production code. The real issues are in the production CSS (lib-stat, type-intro-card, gov-group, stat-card).
+
+**Visual overlays**: No browser injection available on static HTML file. Fallback: static analysis above.
+
+## Overall Impression
+
+The prototype is a solid, functional internal tool that correctly implements the PRD requirements. It has the right industrial feel — dark rail, grid texture, port blue and signal orange palette, JetBrains Mono for IDs. The domain logic is well-represented: 6 KO types, conflict management, 3-column composer, version snapshots. Where it falls short is in polish and power-user paths. The design is correct but unremarkable — it won't surprise anyone, which is appropriate for this register. The main opportunities are: (1) fixing the side-stripe border anti-pattern, (2) adding keyboard shortcuts for the most common actions, (3) replacing the bounce easing on the tweaks toggle, and (4) making the tweaks panel unnecessary by building those options directly into the UI.
+
+## What's Working
+
+1. **Navigation structure**: The dark rail with 3 groups (资产载体/治理/配置) is clear and appropriate for the audience. Active state with orange left border is immediately legible. Sub-menu with type dot + code + count follows the PRD spec exactly.
+
+2. **KO type color system**: The 6-type color coding (CON=red, RUL=orange, PAR=green, ONT=purple, PRM=pink, DOC=gray) is consistently applied across dots, tags, and badges. This is a well-designed type identification system.
+
+3. **Stat card indicator bar**: The `::before` pseudo-element approach for the 3px left border on stat cards is the right implementation — it's CSS-only, non-intrusive, and visually clear. The warn/danger/success variants are correctly implemented.
+
+4. **Pagination component**: The `.table-pagination` pattern (page-info + page-size select + page-jump input + GO button) is correctly implemented per the PRD NFR-22 specification. This is one of the most important consistency wins.
+
+5. **Three-column composer layout**: The 240px + 1fr + 1fr grid for the prompt assembler matches the PRD FR-13 spec. The fixed column widths are appropriate for the workflow density.
+
+## Priority Issues
+
+### [P1] Side-stripe borders on stat cards and lib-stat cards
+**What**: Multiple cards use `border-left: 3px solid [color]` as a decorative accent. This is the single most recognizable AI-generated UI tell.
+**Why it matters**: Knowledge workers who see this interface daily will recognize the pattern as templated, reducing trust in the design's intentionality.
+**Fix**: Replace with the `::before` pseudo-element approach already used correctly on `.stat-card`. For `.lib-stat` cards, add `::before` rules matching the port-blue/signal-red/signal-orange colors. For `.type-intro-card`, use `border-top: 3px solid` (which is already used on line 525, but that one is flagged as "border-accent-on-rounded" because of the 2px radius — either remove the radius or use `::before`).
+**Suggested command**: `/impeccable quieter` — targets decorative accent patterns
+
+### [P1] Bounce easing on toggle switch
+**What**: `cubic-bezier(.34, 1.56, .64, 1)` on `.tw-switch::after` (line 761) creates bounce/elastic feel on the tweaks panel toggle.
+**Why it matters**: Bounce easing signals prototype, not production. Users who see this and know what they're looking at will write this off as a mockup.
+**Fix**: Change to `ease-out` or a custom exponential curve like `cubic-bezier(0.25, 0.46, 0.45, 0.94)`. The `prefers-reduced-motion` media query already handles the fallback (transition: none), which is correct.
+**Suggested command**: `/impeccable polish`
+
+### [P1] Zero keyboard shortcuts
+**What**: The entire interface has no keyboard navigation. Every action requires a mouse. The target users (algorithm engineers, system administrators) are power users who will expect keyboard shortcuts for common operations.
+**Why it matters**: This is the primary flexibility/efficiency failure. The 3-column composer requires many clicks to add/remove KO chips. Navigation between pages requires mouse interaction. This is the single biggest productivity gap.
+**Fix**: Define a keyboard shortcut map: Tab/Shift+Tab for focus navigation, Enter to confirm, Escape to close modals, Ctrl+S to save (KO edit), Ctrl+N for new KO, arrow keys for list navigation. Add visible focus indicators (`outline: 2px solid var(--signal-orange)`) on all interactive elements.
+**Suggested command**: `/impeccable harden` — keyboard accessibility and edge cases
+
+### [P2] Tweaks panel is decorative prototype scaffolding
+**What**: The `.tweaks-wrap` panel (lines 740-762) implements a floating "tweaks" widget with color swatches, dark mode toggle, and other prototype controls. This is a design-tool artifact, not a production UI pattern.
+**Why it matters**: If this prototype is ever used as a reference for production development, the tweaks panel would need to be removed entirely. It's a distraction from the real UI decisions.
+**Fix**: Remove the tweaks panel and implement the theme options (dark mode, accent color) as first-class UI settings in the user's profile or preferences, if they belong in the product at all.
+**Suggested command**: `/impeccable distill` — strip unnecessary complexity
+
+### [P2] Empty states are decorative, not instructive
+**What**: The `.empty-state` component (lines 712-715) shows an icon, title, and description but no actionable next step. "暂无知识对象，点击创建第一个" exists in the prototype but the empty state design itself doesn't guide the user to the CTA.
+**Why it matters**: In a KO library that starts empty (new project), the first-time user needs to understand what a KO is, what types are available, and how to create the first one. An empty state that's purely "nothing here" without a clear path forward is a cognitive load failure.
+**Fix**: Add a visible CTA button to every empty state. Consider a small illustration showing the KO type concept. Add a brief description of what that particular list contains and why it matters.
+**Suggested command**: `/impeccable onboard` — first-run flows and empty states
+
+### [P2] Modal dialogs lack keyboard dismiss
+**What**: All `.modal-overlay` dialogs are shown/hidden via JS click handlers, but there's no Esc key handler to close them.
+**Why it matters**: Power users expect to be able to dismiss a modal with Escape. The confirmation dialogs for destructive actions (delete KO, remove member) are particularly critical — users in a hurry need a quick escape.
+**Fix**: Add a document-level keydown listener for Escape that closes the topmost modal. Add `tabindex="-1"` to modal headers so focus management works correctly. Ensure focus returns to the trigger element on close.
+**Suggested command**: `/impeccable harden`
+
+### [P3] Conflicting border-radius on border-accent elements
+**What**: `.type-intro-card` (line 404) has both `border-radius: 2px` and `border-top: 3px solid var(--port-blue)`. The border clashes with rounded corners. Same issue flagged at line 525 for `.precheck-panel`.
+**Why it matters**: Minor visual inconsistency. The card has a sharp-corner top border and rounded corners elsewhere, which looks like a forgotten corner radius rather than intentional design.
+**Fix**: Either remove `border-radius: 2px` from these cards or switch the accent from `border-top` to `::before` pseudo-element.
+**Suggested command**: `/impeccable polish`
+
+## Persona Red Flags
+
+**Alex (Power User)**: No keyboard shortcuts detected. The 3-column composer requires many clicks for KO selection. Form requires multiple steps for primary actions (create KO → select type → fill form → submit). High abandonment risk for power users who expect efficiency.
+
+**Jordan (First-Timer)**: No contextual help or tooltips. Domain jargon (KO, CON, RUL, PAR, ONT, PRM, DOC, SNP, PRP, AUDIT) appears without explanation on first visit. KO library overview page has no onboarding guidance — a new user sees 6 type cards with no indication of which to start with.
+
+**Sam (Accessibility-Dependent)**: Focus indicators are present on buttons (`outline: 2px solid var(--signal-orange)`) but missing on many form controls and nav items. Modal dialogs have no focus trapping — Tab can escape the modal to content behind it. Color contrast appears adequate for text on white backgrounds, but the dark rail and colored badges need verification against WCAG AA (4.5:1).
+
+## Minor Observations
+
+- The `tweaks-panel` (lines 746-762) uses `backdrop-filter: blur(24px)` which is unsupported in some browsers the PRD specifies (Safari 15+, Chrome 90+). Falls back gracefully but looks different.
+- The `.lib-type-grid` at line 369 uses `repeat(3, 1fr)` — the PRD says 6 cards in a 3×2 grid, which is correct. But the responsive breakpoint at `max-width: 1200px` collapses to 2 columns, which could cause the 6 cards to become 3 rows of 2, which may cause layout issues with long card titles on narrow viewports.
+- The `import-dropzone` has `border-radius: 4px` (line 731) while everything else uses `2px`. Minor inconsistency.
+- The `doc-preview-text` (line 783) uses a dark background (#1A2332) for the TXT preview area — this is the same color as the preview-pane in the composer, which is consistent.
+- The timeline items (lines 592-596) use `::before` with `box-shadow` for the node — this is correct and avoids the side-stripe anti-pattern.
+
+## Questions to Consider
+
+- Is the tweaks panel intentional prototype scaffolding that should be stripped before handoff, or is it a hint toward a future "settings drawer" feature?
+- Should the 6 KO type cards on the library overview be visually differentiated (different sizes, different layouts) rather than identical cards? The PRD says "avoid identical card grids" — does that apply here since the 6 types genuinely have different purposes?
+- Does the target user (dock operations expert) have keyboard proficiency, or is this a mouse-driven workflow environment?
+- Is the 3-column composer the primary daily workflow? If so, keyboard shortcuts for KO selection and section navigation should be the first hardening priority.

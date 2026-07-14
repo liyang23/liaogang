@@ -1,0 +1,102 @@
+# Changelog
+
+- 记录格式：`- v版本号 YYYY-MM-DD HH:MM:SS 作者: 变更摘要 [(user-visible)]`
+- 说明：
+  - `v版本号` 使用本次变更对应的发布版本
+  - 日期时间必须使用 `YYYY-MM-DD HH:MM:SS`
+  - `作者` 填写提交人或变更责任人
+  - `变更摘要` 使用中文，简明说明本次改动
+  - 用户可感知的变更在末尾追加 `(user-visible)`
+
+- v1.13.2 2026-07-13 15:47:30 liyang: 使用 spec-first 初始化项目
+- v1.14.0 2026-07-13 16:30:00 liyang: 同步 PRD v0.31/v0.32/v0.37/v0.38 修订到原型 V3 (user-visible)
+  - 同步 KO 数量口径：PAR 89→92、DOC 70→76（侧栏 subcount、KO 库首页卡片、Dashboard breakdown、KO-PAR/KO-DOC 副标题共 7 处） (user-visible)
+  - 删除 AB 岗文案：Dashboard 活动列表"待 AB 岗审核"→"待合规审核员审核" (user-visible)
+  - 删除项目成员管理：移除 US-16 残留（成员数列、4 个项目成员数字、membersModal 弹窗、membersData 数据、openMembersModal/renderMembers/addMember/removeMember 函数、相关 CSS 样式） (user-visible)
+  - 调整项目列表 KO 数：PROJ-0001 120→121，使四项目加和 121+72+49+36=278 闭环 (user-visible)
+  - 顶部栏项目切换器补 PROJ-0004 归档项目（默认 disabled + 新增"显示已归档"复选框 + toggleArchivedProject 函数） (user-visible)
+- v1.15.0 2026-07-13 19:30:00 liyang: 通过 spec-prd 流程精炼 PRD v0.31 → v0.32，新增 17 项 owner 决议
+  - 新增 docs/brainstorms/liaogang-famou-km-platform-requirements.md（1100+ 行 PRD 产物，含 Owner Decision Trace 17 条 / Outstanding Questions 4 项 / Planning Recheck 8 项）
+  - 删除业务专家「提案权」功能（整段移除 §5.2.2.1 + FR-41/42 + §6 业务专家活跃度行 + 权限矩阵 5 列保持） (user-visible)
+  - 改为补 seed 达到 header == list 严格一致（PAR 92 / DOC 76 / 四项目 121+72+49+36=278 闭环；删除 §5.2.10 演示态 chip 方案） (user-visible)
+  - 3 秒撤销仅前端（删除后端接口契约 POST /api/audit/{id}/revert + audit_log reverted_* 字段） (user-visible)
+  - PRM 走标准 KO Version 流程（重写 §5.2.1.4 PRM 豁免表） (user-visible)
+  - 项目归档仅 KO 冻结（PRP/SNP 不动，§5.2.2 关键规则 4 明确化） (user-visible)
+  - 管理员仲裁快路径（自动 Draft→Review→Approved→Published；审计日志 USER_CONFLICT_ARBITRATE） (user-visible)
+  - 新增 LLM 冲突建议接口 POST /api/conflict/{id}/suggest（OQ-9；新增 NFR-28 LLM 建议响应 ≤ 5s） (user-visible)
+  - 删除"检测器版本号"相关需求（v0.31 原型 v2026.07.08 显示 + TASK-C6-YYYYMMDD-HHMM 编号移除）
+  - 审计日志 ID 三重暴露（hover tooltip + 详情弹窗 + CSV 导出；新增 NFR-29 hover 响应 ≤ 100ms） (user-visible)
+  - 角色变更下次登录时生效（撤销 v0.34 修订"下次操作时生效"；删除 WebSocket role-changed 推送） (user-visible)
+  - 113 KO 改为 PRP 动态实际数（删除"模板作者登记 assembly_ko_count"部署门禁） (user-visible)
+  - 模板引擎描述收缩到产品需求范围（删除"自研 renderMarkdown() 引擎"措辞，改为产品可观察输出） (user-visible)
+  - §6 成功指标移除"业务专家活跃度"和"提示词-算法结果关联率"（后者移入二期 R-10） (user-visible)
+  - 跨类搜索按原型实现（FR-05 验收补 title+id+typeName 3 字段） (user-visible)
+  - 当前为 checkpoint-prd 状态（17/17 OQ 全部 grill 闭合，可入规划阶段；finalize 升级需 producer 路径）
+- v1.15.1 2026-07-13 19:45:00 liyang: spec-prd 二次精炼追加 OQ-18
+  - 参数化 PRD 内具体 KO/文档数量信息（删除源组织估算 "约 70 个文档"；保留结构性数字 6 类型/5 角色/4 系统角色/4 项目；seed 数据保留为 "v0.32 初始 seed" 标签不作为未来约束）
+  - G-01~G-06 目标值参数化为 N/K%/T%/P 等可配置变量
+  - §六 成功指标三阶段 DAU + 9 项指标全部参数化为可配置变量
+  - NFR-02/03/04 重写为 SLA 函数 g(N)/h(M)/f(N)
+  - FR-01 验收：统计卡片显示数字来自后端 /api/ko/count 接口实时计算，不限定具体数值
+  - §9.1 依赖中 "补 PAR 92 / DOC 76 seed" 改为 "seed 完整性达部署门禁"
+  - FR-15 中 "113 个 KO 装配" 改为 M 个动态实际数
+  - 新增 OQ-18 Owner Decision Trace 行（18/18 OQ 全部 grill 闭合）
+  - PRD 行数：1049 → 1088 (+39 行)
+- v1.15.2 2026-07-13 20:00:00 liyang: spec-prd 三次精炼追加 OQ-19 §四 详细 US 补全
+  - §四 4.2 从"一句话概述清单"升级为完整 US-01~US-21 详细描述（按 v0.32 18 项决议应用修改）
+  - US-01 卡片显示数字改为来自后端 /api/ko/count 接口实时计算（OQ-18）
+  - US-05 增加 OQ-9 LLM 建议 + OQ-8 仲裁并发布快路径描述
+  - US-06 冲突详情行增加 LLM 主动建议；仲裁并发布为快路径
+  - US-08 增加 OQ-6 PRM 走标准 KO Version 流程
+  - US-11 业务专家仅 RUL 可创建（OQ-2 业务专家直接编辑范围）
+  - US-12 PRP 装配 KO 数改为动态实际数（OQ-18）
+  - US-13 删除"三级防线覆盖"措辞
+  - US-15 移除"成员数列"措辞（OQ-1 维持 v0.37）
+  - US-16 整条删除（v0.37 维持）
+  - US-17 5 列权限矩阵无"提案"列（OQ-2）
+  - US-18 角色变更下次登录生效 + 删 WebSocket + 撤销仅前端 UI（OQ-5+OQ-12）
+  - US-20 审计日志 ID 三重暴露（OQ-11）
+  - US-21 4 类型导入（CON/RUL/PAR/SCH）保持
+  - 新增 OQ-19 Owner Decision Trace 行（19/19 OQ 全部 grill 闭合）
+  - PRD 行数：1088 → 1287 (+199 行)
+- v1.15.3 2026-07-13 20:30:00 liyang: spec-prd 四次精炼追加 OQ-20 §4.1 权限矩阵重构
+  - §4.1 从"5 角色清单 + 单一 2D 矩阵"重构为"5 预置角色 + 默认权限矩阵（v0.32 初始 seed）+ 权限可调整性"三段式
+  - §4.1.1 5 预置角色清单（ROLE-0001~0005，含定位 + 默认范围）
+  - §4.1.2 默认权限矩阵 - 知识对象库 KO 子类型（5 角色 × 6 KO 类型 × 5 操作 完整默认矩阵，5 个独立 6×5 表）
+  - §4.1.3 其他菜单默认权限（总览/提示词/知识治理/审计日志/项目管理/字典管理/权限与角色）
+  - §4.1.4 权限可调整性（管理员通过 FR-27 调整；预置角色不可删除但权限可调整；支持新增自定义角色；变更下次登录生效）
+  - §5.2.2 关键规则补充第 4 条"权限可调整性"（OQ-20）
+  - 新增 OQ-20 Owner Decision Trace 行（20/20 OQ 全部 grill 闭合）
+  - PRD 行数：1287 → 1379 (+92 行)
+- v1.15.4 2026-07-13 22:00:00 liyang: spec-doc-review P1 推荐方案落地（PRD 文档可读性改进）
+  - F-001：PRD 顶部新增「## 导航（模块地图 + ID 格式速查）」章节，含 14 章节模块地图 + 12 类 ID 格式速查表
+  - F-002：§5.2 末尾新增「5.2.12 横向约束快速定位表」（11 行 × 3 列：子节号 / 标题 / 关键决议）
+  - F-003：§5.2.4.1 新增「SNP/PRP 创建与陈旧快照流程」mermaid 序列图（演示 hash 命中 / 未命中 / PAR 变更 stale 三场景）
+  - F-004：§5.2.6 顶部新增「v0.32 重构要点」总结（3 句话：3 秒撤销仅前端 / audit_log ID 三重暴露 / audit_log 简化模型）
+  - F-005：§4.1.5 新增「权限查找指南」段落（5 角色 × 13 菜单 × 5 操作共 325 cells 快速定位，5 种查找目标 → 优先查 + 备用查）
+  - F-006：PRD 顶部「## 导航」含 12 类 ID 格式速查表（与 §10.7.7 完整版交叉引用）
+  - PRD 行数：1379 → 1505 (+126 行)
+- v1.15.5 2026-07-13 22:30:00 liyang: spec-doc-review P2 推荐方案落地（PRD 文档可读性改进 + 内部一致性）
+  - F-014：§5.2.3 顶部新增「v0.32 重构要点」（4 句话：MD5 指纹保留 / LLM 主动建议新增 / 检测器版本号删除 / 冲突类型占位清晰）
+  - F-009：§5.2.3.1.1 新增「冲突类型清单」表格（9 行 × 4 列：C1-C6 + H1-H6 完整对照）
+  - F-007：§六 末尾新增「v0.32 初始 seed 示例」段落（8 行指标示例 + 对应参数化变量映射）
+  - F-008：§10.4 顶部新增「v0.32 初始 seed 与 §6 参数化目标的区别」段落（6 维对比：来源 / 作用 / 关系 / 示例 / 数据来源 / 修订触发）
+  - F-010：Outstanding Questions 表新增「决策触发时间」列（4 行：OQ-T01~T04 各对应 Sprint 0~2 启动前）
+  - F-011：Planning Recheck 表新增「实施启动前触发条件」列（8 行：R-PL-01~R-PL-08 各对应 Sprint 0~4 启动前）
+  - F-012：§10.7.1 简化（引用 DESIGN.md 完整版，保留 PRD 实施特有约束 6 项：端口蓝 / 信号橙 / 深色 Rail / 6 类型颜色 + 形状 / 3 秒撤销 Toast / audit_log hover 响应）
+  - F-013：§10.7.3.1 新增「原型 V3 函数映射」表（17 行：场景 → 原型 V3 函数 → 行号 → 实施模块）
+  - PRD 行数：1505 → 1600 (+95 行)
+- v1.15.6 2026-07-14 liyang: spec-doc-review Plan re-review P1 推荐方案落地（跨文档引用更新）
+  - F-101：Plan U4 / U5 / U6 / U7 / U8 加 PRD v0.32 新子节引用（§5.2.3.1.1 冲突类型清单 / §5.2.4.1.1 SNP-PRP mermaid / §4.1.5 权限查找指南 / §5.2.3 v0.32 重构要点 / §10.7.3.1 原型 V3 函数映射）
+  - F-102：Plan §Open Questions 加「Plan Q-I ↔ PRD OQ-T 映射」段（5 行 × 4 列：Plan Q-I / PRD OQ-T / 主题 / 决策触发时间）
+  - F-103：Plan §Completion Criteria 加「跨文档引用」子节（10 行 × 3 列：Plan U / 验收参照 / PRD §引用）
+  - Plan frontmatter 更新：date 2026-07-13 → 2026-07-14；deepened 2026-07-13 → 2026-07-14
+  - Plan 行数：约 700+ → 950 (+~250 行)
+  - Plan ↔ PRD 引用数：6 → 15 (+9 处)
+- v1.15.7 2026-07-14 liyang: spec-doc-review Plan re-review P2 推荐方案落地（跨文档 + 责任分配）
+  - F-201：Plan §计划元数据 加「Plan Sprint 拆分 ↔ PRD §8 时间计划映射」表（4 行 × 3 列：Sprint / Plan U 范围 / PRD §8 里程碑 + 交付物）
+  - F-202：Plan §System-Wide Impact "Interaction graph" 加 1 行：SNP/PRP 完整生命周期可视化见 PRD v0.32 §5.2.4.1.1 mermaid 序列图
+  - F-203：Plan §Risks & Dependencies 表加 1 列"PRD 引用"（12 行风险全部交叉引用 PRD §9.1/§9.2/§4.1/§10.4 等）
+  - F-205：Plan §System-Wide Impact 加「未明确归属项的责任分配」表（8 行 × 4 列：observability / 备份恢复 / SSO IdP 维护 / 数据迁移 / LLM 配额审批 / 角色变更通知 / 文档预览 / 监控值班）
+  - F-204 已被 F-101 覆盖（U5 Patterns 已加 §10.7.3.1 引用 + 具体函数名 switchRoleTab/openRoleAssignmentModal/saveRole/saveUserRole），跳过
+  - Plan 行数：950 → 1000+ (+~50 行)

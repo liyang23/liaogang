@@ -1,0 +1,17 @@
+{
+  "schema_version": "mcp-warmup-cache.v1",
+  "tool_id": "sequential-thinking",
+  "host": "claude",
+  "platform": "macos",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-sequential-thinking@latest",
+    "--help"
+  ],
+  "command_hash": "edaade199c4743057071e73ce5f769a9d8e5fc0a36cdc286b57f97fa9bf475b4",
+  "package_spec": "",
+  "last_success_at": "2026-07-13T09:13:25Z",
+  "last_success_epoch": 1783934005,
+  "exit_code": 0
+}
