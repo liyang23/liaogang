@@ -8,7 +8,7 @@
             "type": "command",
             "command": "node",
             "args": [
-              ".claude/hooks/session-start"
+              "/Users/liyang129/data/liaogang/.claude/hooks/session-start"
             ]
           }
         ]
@@ -22,7 +22,7 @@
             "type": "command",
             "command": "node",
             "args": [
-              ".claude/hooks/spec-plan-guard"
+              "/Users/liyang129/data/liaogang/.claude/hooks/spec-plan-guard"
             ]
           }
         ]
@@ -36,7 +36,7 @@
             "type": "command",
             "command": "node",
             "args": [
-              ".claude/hooks/prd-prewrite-guard"
+              "/Users/liyang129/data/liaogang/.claude/hooks/prd-prewrite-guard"
             ]
           }
         ]
@@ -50,7 +50,7 @@
             "type": "command",
             "command": "node",
             "args": [
-              ".claude/hooks/prd-readiness-guard"
+              "/Users/liyang129/data/liaogang/.claude/hooks/prd-readiness-guard"
             ]
           }
         ]

@@ -198,3 +198,14 @@
   - **新建 `docs/private/README.md`**：说明目录用途（本地私有文件，不进 git）+ 添加新文件约定 + Sprint 1 已存放文件清单（`llm_client.txt` 等）
   - **`git status` 清理**：untracked 列表从 8 项减到 6 项（`docs/private/` 整目录隐藏 / `llm_client.txt` / `test_env.txt` 隐藏 / 中文 docx 隐藏）
   - **mvn 验证**：不需要（纯配置文件改动，但 push 时 hook 仍跑 mvn compile + mvn verify）
+- v1.17.1 2026-07-15 16:35:00 liyang: 修复 Stop hook 相对路径解析错误（worktree 子目录触发 MODULE_NOT_FOUND）
+  - **根因**：之前对 `.claude/settings.json` 的绝对路径修改**从未 commit**（只在 worktree 内临时改过，worktree 删除后丢失；git log 显示 .claude/settings.json 自 9a0fe15 first commit 后无新版本）
+  - **触发场景**：在 worktree 子目录（`.worktrees/sprint-2/`）跑命令时，Stop hook 解析相对路径 `.claude/hooks/prd-readiness-guard` → `/Users/.../sprint-2/.claude/hooks/prd-readiness-guard`（不存在）→ `MODULE_NOT_FOUND`
+  - **修复**：`.claude/settings.json` 4 个 hook args 全部改为绝对路径：
+    · SessionStart → `session-start`
+    · UserPromptExpansion → `spec-plan-guard`
+    · PreToolUse → `prd-prewrite-guard`
+    · Stop → `prd-readiness-guard`
+  - **两处都改**：主目录（main 分支）+ worktree（feat/sprint-2-ko-and-permissions 分支）保持一致
+  - **根治原理**：绝对路径与 process.cwd() 无关，无论 cwd 在 worktree 根或子目录都正确解析
+  - **机器耦合代价**（已知）：换电脑要改路径，单人项目可接受；详见 `docs/solutions/tooling-decisions/stop-hook-absolute-paths.md`
