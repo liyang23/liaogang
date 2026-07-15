@@ -25,6 +25,7 @@
         <mybatis-plus.version>3.5.5</mybatis-plus.version>
         <flyway.version>9.22.3</flyway.version>
         <springdoc.version>2.3.0</springdoc.version>
+        <jjwt.version>0.11.5</jjwt.version>
     </properties>
 
     <dependencies>
@@ -32,6 +33,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -58,10 +63,36 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
-        <!-- MyBatis-Plus（用于复杂查询 + 软删除 + 乐观锁）-->
+        <!-- Lombok（编译期注解处理器，生成 getter/setter/builder 等）-->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- JJWT 0.12（JWT 签发/解析；OQ-23 辽港统一认证集成）-->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- MyBatis-Plus（用于复杂查询 + 软删除 + 乐观锁；Sprint 1 仅依赖预埋，Sprint 2+ 启用）-->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot-3-starter</artifactId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
             <version>${mybatis-plus.version}</version>
         </dependency>
 

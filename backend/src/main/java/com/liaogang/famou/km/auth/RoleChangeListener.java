@@ -1,6 +1,6 @@
 package com.liaogang.famou.km.auth;
 
-import com.liaogang.famou.km.audit.AuditLog;
+import com.liaogang.famou.km.audit.AuditLogEntity;
 import com.liaogang.famou.km.audit.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +40,7 @@ public class RoleChangeListener {
         log.debug("用户登录成功: sub={}, role={}", sub, role);
 
         // 写审计日志（实际触发由 T006 实施时接入 USER_ROLE_LOGIN 事件类型）
-        AuditLog auditLog = AuditLog.builder()
+        AuditLogEntity auditLog = AuditLogEntity.builder()
             .action("USER_ROLE_LOGIN")
             .userId(sub)
             .detail("role=" + role)

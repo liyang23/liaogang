@@ -19,7 +19,6 @@ import java.time.format.DateTimeFormatter;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class LlmQuotaService {
 
     @Value("${app.llm.quota.platform-percentage:80}")
@@ -31,7 +30,9 @@ public class LlmQuotaService {
     @Value("${app.llm.quota.daily-platform-limit:1000}")
     private int dailyPlatformLimit;
 
-    private final StringRedisTemplate redisTemplate;
+    // F-24 修复：test profile 排除 RedisAutoConfiguration 时允许为 null（useRedisMock 兜底）
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private StringRedisTemplate redisTemplate;
     private final java.util.Map<String, Long> mockCounterMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
@@ -52,7 +53,8 @@ public class LlmQuotaService {
      */
     // F-3 修复：Redis Lua 原子脚本（CAS）替代 INCR-then-check TOCTOU
     // 脚本语义：先 INCR 两个 key，再检查是否超过限额，若超过则 DECR 回滚
-    private static final String LUA_INCR_AND_CHECK = "        local platformCount = redis.call('INCR', KEYS[1])
+    private static final String LUA_INCR_AND_CHECK = """
+        local platformCount = redis.call('INCR', KEYS[1])
         local userCount = redis.call('INCR', KEYS[2])
         if redis.call('EXISTS', KEYS[3]) == 0 then
             redis.call('EXPIRE', KEYS[1], 86400)
@@ -67,7 +69,8 @@ public class LlmQuotaService {
             redis.call('DECR', KEYS[2])
             return {0, platformCount, userCount}
         end
-        return {1, platformCount, userCount}";
+        return {1, platformCount, userCount}
+        """;
 
     public boolean incrementAndCheck(String userSub) {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));

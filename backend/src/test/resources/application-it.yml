@@ -49,11 +49,13 @@ spring:
     swagger-ui:
       enabled: true
 
-# MinIO 测试环境（127.0.0.1:9001 / minioadmin / minioadmin@2026）
+# MinIO 测试环境（API 127.0.0.1:9000 / Console 127.0.0.1:9001）
 # Q-I3 测试环境版；生产由 ops 提供独立 endpoint + 凭据
+# 重要：MinIO 9000 = S3 API 端口（MinIO Java SDK 访问），9001 = Console Web UI（仅浏览器）
+# test_env.txt 写的 9001 是 Console 端口，application 需用 9000 才能调 S3 API
 app:
   minio:
-    endpoint: http://127.0.0.1:9001
+    endpoint: http://127.0.0.1:9000
     access-key: minioadmin
     secret-key: minioadmin@2026
     bucket-name: km-platform-it

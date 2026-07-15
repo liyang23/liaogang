@@ -28,7 +28,12 @@ import static org.mockito.Mockito.when;
  * <p>当前 AuditLogService 走日志落盘（PRD §5.2.6 后续接 ClickHouse/ELK），
  *     本测试用 Logback ListAppender 拦截；audit_log 表实装后追加 JDBC 验证。
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+    // F-25 修复：AuditAspectIT 不依赖业务表，跳过 Flyway V9001 seed 迁移
+    // （V9001 假设 role/ko 等表已存在，但 Sprint 1 范围无建表 migration；U4/U9 实装时补）
+    "spring.flyway.enabled=false",
+    "spring.jpa.hibernate.ddl-auto=none"
+})
 @ActiveProfiles("it")
 @Import(AuditAspectIT.TestServiceConfig.class)
 class AuditAspectIT {

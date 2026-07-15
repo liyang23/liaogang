@@ -139,13 +139,6 @@ logging:
     max-size: 100MB
     max-history: 30
 
-# 服务器配置
-server:
-  compression:
-    enabled: true
-    mime-types: application/json,application/xml,text/html,text/plain
-  shutdown: graceful
-
 # 跨域（统一由 SecurityConfig.corsConfigurationSource 读取 CORS_ALLOWED_ORIGINS 环境变量）
 # F-6 修复：避免与 SecurityConfig 双源配置漂移，仅保留 CORS_ALLOWED_ORIGINS 环境变量入口
 cors:

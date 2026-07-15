@@ -27,22 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
-    /**
-     * F-18 修复：验证 JWT sub 对应用户仍存在且未禁用
-     * <p>Sprint 1 mock 模式：本地 Map 模拟；生产应接 user 表
-     */
-    private final java.util.Map<String, Boolean> activeUserMockMap = new java.util.concurrent.ConcurrentHashMap<>() {{
-        put("mock-sub-ROLE-0001", true);
-        put("mock-sub-ROLE-0002", true);
-        put("mock-sub-ROLE-0003", true);
-        put("mock-sub-ROLE-0004", true);
-        put("mock-sub-ROLE-0005", true);
-    }};
-    private boolean isUserActive(String sub) {
-        // Sprint 1 mock：检查本地 Map；生产应查 user 表 status='Active'
-        return activeUserMockMap.getOrDefault(sub, false);
-    }
-
 /**
  * JWT 鉴权过滤器（v0.32 OQ-12 + OQ-23）。
  *
@@ -62,6 +46,23 @@ import java.util.stream.Collectors;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
+
+    /**
+     * F-18 修复：验证 JWT sub 对应用户仍存在且未禁用
+     * <p>Sprint 1 mock 模式：本地 Map 模拟；生产应接 user 表
+     */
+    private final java.util.Map<String, Boolean> activeUserMockMap = new java.util.concurrent.ConcurrentHashMap<>() {{
+        put("mock-sub-ROLE-0001", true);
+        put("mock-sub-ROLE-0002", true);
+        put("mock-sub-ROLE-0003", true);
+        put("mock-sub-ROLE-0004", true);
+        put("mock-sub-ROLE-0005", true);
+    }};
+
+    private boolean isUserActive(String sub) {
+        // Sprint 1 mock：检查本地 Map；生产应查 user 表 status='Active'
+        return activeUserMockMap.getOrDefault(sub, false);
+    }
 
     @Value("${app.liaogong-auth.jwt-secret:default-jwt-secret-please-change-in-production-32bytes-min}")
     private String jwtSecret;

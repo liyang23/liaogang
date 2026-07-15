@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AuditLogService {
 
     @Value("${app.audit.partition-by-month:false}")
@@ -32,19 +31,17 @@ public class AuditLogService {
     // F-4 修复：使用 Redis INCR 替代 AtomicInteger（Sprint 1 mock 模式用内存 Map）
     private final java.util.Map<String, Long> mockCounterMap = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, Long> mockExpiryMap = new java.util.concurrent.ConcurrentHashMap<>();
-    private final StringRedisTemplate redisTemplate;
-    private final boolean useRedisMock;
+    // F-24 修复：test profile 排除 RedisAutoConfiguration 时允许为 null（useRedisMock=true 兜底）
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private StringRedisTemplate redisTemplate;
 
-    public AuditLogService(StringRedisTemplate redisTemplate,
-                           @Value("${app.audit.use-redis-mock:true}") boolean useRedisMock) {
-        this.redisTemplate = redisTemplate;
-        this.useRedisMock = useRedisMock;
-    }
+    @Value("${app.audit.use-redis-mock:true}")
+    private boolean useRedisMock;
 
     /**
      * 同步写审计日志
      */
-    public void record(AuditLog log) {
+    public void record(AuditLogEntity log) {
         log.setId(generateId());
         if (log.getCreatedAt() == null) {
             log.setCreatedAt(LocalDateTime.now());
@@ -59,7 +56,7 @@ public class AuditLogService {
      * 异步写审计日志（不阻塞业务主流程）
      */
     @Async
-    public void recordAsync(AuditLog log) {
+    public void recordAsync(AuditLogEntity log) {
         record(log);
     }
 
@@ -82,10 +79,11 @@ public class AuditLogService {
             });
         } else {
             // 生产模式（Redis INCR 原子递增，分布式唯一）
-            n = redisTemplate.opsForValue().increment(key);
-            if (n != null && n == 1L) {
+            Long nBoxed = redisTemplate.opsForValue().increment(key);
+            if (nBoxed != null && nBoxed == 1L) {
                 redisTemplate.expire(key, 31, TimeUnit.DAYS);
             }
+            n = nBoxed == null ? 0L : nBoxed;
         }
         return String.format("AUDIT-%s-%06d", date, n % 1000000);
     }

@@ -55,9 +55,6 @@ public class DeepSeekClient {
     public DeepSeekClient(RestTemplateBuilder builder,
                           com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-    }
-
-    public DeepSeekClient(RestTemplateBuilder builder) {
         this.restTemplate = builder
             .setConnectTimeout(Duration.ofSeconds(5))
             .setReadTimeout(Duration.ofSeconds(5))

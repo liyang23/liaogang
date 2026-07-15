@@ -82,7 +82,7 @@ public class AuditAspect {
             String finalAction = succeeded ? auditAnnotation.action() : auditAnnotation.action() + "_FAILED";
             Map<String, Object> finalDetail = new HashMap<>(detailMap);
             finalDetail.put("result", succeeded ? "SUCCESS" : "FAILURE");
-            AuditLog auditLog = AuditLog.builder()
+            AuditLogEntity auditLog = AuditLogEntity.builder()
                 .action(finalAction)
                 .userId(userSub)
                 .detail(finalDetail.toString())
