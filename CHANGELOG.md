@@ -135,3 +135,10 @@
   - **Frontmatter** 严格按 `spec-compound/references/schema.yaml` Bug track 模板（title/date/category/module/problem_type/component/severity/symptoms[5]/root_cause/resolution_type + 新 promote 必填 `invalidation_condition` / `source_refs` + 8 tags）；通过 `validate-frontmatter.py` exit 0
   - **Related solutions 待立**（本文档 Related 段列出，本次未立）：MinIO 端口语义 / Lombok `@RequiredArgsConstructor` 冲突 / public `@interface` 文件名规范 / Stop hook 绝对路径
   - 关联 commit：`d676c27` (fix backend) + Sprint 1 全部 12 commit（9 原始 + 2 集成/安全 + 1 fix）
+- v1.16.3 2026-07-15 15:30:00 liyang: 实施 P1 三层编译门禁（pre-commit / pre-push / GitHub Actions CI）
+  - **新增 `.githooks/pre-commit`**：commit 前跑 `mvn compile -q`（约 5-10s），仅当本次 commit 涉及 `backend/**.java` 才跑（避免改 frontend/docs/.githooks 拖慢）；用 `set -o pipefail` 确保 mvn 失败被正确捕获（修复初版 `mvn | tail` 让 tail 退出 0 掩盖 mvn 失败的 bug）；实测故意改坏 `Result.java` 触发 `非法字符: '#'` 编译错误，hook 立即输出"❌ mvn compile 失败"并 exit 1 阻断 commit
+  - **新增 `.githooks/pre-push`**：push 前跑 `mvn verify -Dspring.profiles.active=it`（约 30s），仅当本次 push 涉及 `backend/**` 才跑；需要 host 已有 MySQL/Redis/MinIO 或运行 `./scripts/test-env-up.sh`
+  - **新增 `.github/workflows/backend-ci.yml`**：PR 必跑 `mvn verify`（MySQL 8.0 + Redis 7-alpine + MinIO service containers，含 healthcheck）；Maven 依赖 `actions/cache` 缓存；surefire/failsafe reports 上传为 artifact（保留 7 天）；触发条件 push 到 main / feat/** 或 PR 目标 main
+  - **README 增强**：在"快速开始"前加"开发者首次 clone 必做"段，明确 `git config core.hooksPath .githooks` 启用步骤 + 三层 hook 行为表 + 跳过 flag（`--no-verify`）+ 关联 solution 文档
+  - **本地启用**：`git config core.hooksPath .githooks` 已在主仓配置；新 clone 的开发者首次运行该命令即可
+  - **来源**：Sprint 1 复盘 `docs/solutions/build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md` P1 提案

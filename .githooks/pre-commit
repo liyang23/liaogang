@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit - commit 前跑 mvn compile（拦截编译错误）
+# 来源：Sprint 1 复盘 docs/solutions/build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md
+# 启用：git config core.hooksPath .githooks
+set -e
+set -o pipefail
+
+# 1. 定位到仓库根目录的 backend
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BACKEND_DIR="$REPO_ROOT/backend"
+
+if [ ! -d "$BACKEND_DIR" ]; then
+  echo "❌ backend 目录不存在: $BACKEND_DIR"
+  echo "   （前端 / docs / chore commit 不需要本 hook，跳过）"
+  exit 0
+fi
+
+if [ ! -x "$BACKEND_DIR/mvnw" ]; then
+  echo "❌ backend/mvnw 不存在或不可执行: $BACKEND_DIR/mvnw"
+  exit 1
+fi
+
+# 2. 仅当本次 commit 涉及 backend/** 改动时才跑
+#    （避免改 frontend/docs/.githooks 时也跑 mvn compile 拖慢）
+if git diff --cached --name-only | grep -qE "^backend/.*\.(java|yml|xml|properties)$|^backend/pom\.xml"; then
+  echo "=== mvn compile 检查（pre-commit hook）==="
+  cd "$BACKEND_DIR"
+  # 关键：set -o pipefail 让 mvn 失败时整体 exit code 非 0（不被 | tail 掩盖）
+  if ./mvnw compile -q -DskipTests > /tmp/mvn-precommit.log 2>&1; then
+    echo "✓ mvn compile 通过"
+  else
+    echo "❌ mvn compile 失败，请先修代码再 commit"
+    echo "   完整日志：tail -50 /tmp/mvn-precommit.log"
+    tail -30 /tmp/mvn-precommit.log
+    echo ""
+    echo "   跳过本 hook（不推荐）：git commit --no-verify"
+    exit 1
+  fi
+else
+  echo "[pre-commit] 本次 commit 不涉及 backend 源码，跳过 mvn compile"
+fi

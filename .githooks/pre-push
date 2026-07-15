@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# .githooks/pre-push - push 前跑 mvn verify（含集成测试，拦截集成环境配置错误）
+# 来源：Sprint 1 复盘 docs/solutions/build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md
+# 启用：git config core.hooksPath .githooks
+set -e
+set -o pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BACKEND_DIR="$REPO_ROOT/backend"
+
+# 1. 仅当 push 涉及 backend/** 改动时才跑
+if ! git diff --name-only @{u}..HEAD 2>/dev/null | grep -qE "^backend/"; then
+  echo "[pre-push] 本次 push 不涉及 backend 源码，跳过 mvn verify"
+  exit 0
+fi
+
+if [ ! -d "$BACKEND_DIR" ]; then
+  echo "❌ backend 目录不存在: $BACKEND_DIR"
+  exit 0
+fi
+
+if [ ! -x "$BACKEND_DIR/mvnw" ]; then
+  echo "❌ backend/mvnw 不存在或不可执行: $BACKEND_DIR/mvnw"
+  exit 1
+fi
+
+# 2. 提示需要 host 已有 MySQL/Redis/MinIO 或 docker compose
+echo "=== mvn verify 检查（pre-push hook，集成测试）==="
+echo "  需要 MySQL 127.0.0.1:3306 / Redis 127.0.0.1:6379 / MinIO 127.0.0.1:9000"
+echo "  若本地未装：./scripts/test-env-up.sh（docker compose）"
+echo "  若已装：直接跑（探测逻辑自动跳过 docker）"
+echo ""
+
+cd "$BACKEND_DIR"
+if ./mvnw verify -Dspring.profiles.active=it -q > /tmp/mvn-prepush.log 2>&1; then
+  echo "✓ mvn verify 通过（含集成测试）"
+else
+  echo "❌ mvn verify 失败，请先修测试再 push"
+  echo "   完整日志：tail -50 /tmp/mvn-prepush.log"
+  tail -30 /tmp/mvn-prepush.log
+  echo ""
+  echo "   跳过本 hook（不推荐）：git push --no-verify"
+  exit 1
+fi

@@ -78,6 +78,35 @@
 | 鉴权 | 辽港统一认证（OQ-23 取代 OIDC） | — |
 | LLM | DeepSeek v4 | — |
 
+## 开发者首次 clone 必做
+
+```bash
+# 启用 Git Hooks（三层编译门禁；Sprint 1 教训沉淀）
+git config core.hooksPath .githooks
+
+# 验证启用成功
+git config core.hooksPath
+# 期望输出：.githooks
+```
+
+启用后：
+
+| 操作 | 跑什么 | 失败效果 |
+|------|--------|----------|
+| `git commit` 涉及 `backend/**.java` | `mvn compile -q`（约 5-10s）| ❌ 阻断 commit |
+| `git push` 涉及 `backend/**` | `mvn verify -Dspring.profiles.active=it`（约 30s）| ❌ 阻断 push |
+| PR / push 触发 `.github/workflows/backend-ci.yml` | `mvn verify`（含 MySQL/Redis/MinIO service containers）| ❌ PR 状态红 + 阻断 merge |
+
+跳过（不推荐）：
+
+- 跳过 pre-commit：`git commit --no-verify`
+- 跳过 pre-push：`git push --no-verify`
+- 跳过 CI：必须在 PR 页面 review 后强制合并（**仅紧急情况**）
+
+参考文档：
+
+- [`docs/solutions/build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md`](docs/solutions/build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md)：Sprint 1 12 commit 0 次 mvn compile 教训 + 预防措施 P1/P2/P3
+
 ## 快速开始
 
 ### 1. 克隆与初始化

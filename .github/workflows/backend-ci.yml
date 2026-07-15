@@ -1,0 +1,114 @@
+name: backend-ci
+
+# 触发条件：
+# 1) push 到 main / feat/** 分支
+# 2) PR 目标 main
+# 作用：跑 mvn verify（含集成测试 it profile），拦截"本地环境绕过 / 跨开发者环境差异"导致的失败
+# 来源：Sprint 1 复盘 docs/solutions/build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+    branches: [main]
+
+# 防止新 push 取消正在进行的工作流
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  backend-verify:
+    name: Backend verify (mvn verify + it profile)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # 注入 MySQL + Redis + MinIO service containers（集成测试 it profile 需要真实服务）
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: km_platform_it
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -ptest"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=30
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=3s
+          --health-retries=15
+
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin@2026
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: >-
+          --health-cmd="wget -q --spider http://localhost:9000/minio/health/live || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: maven
+          cache-key: ${{ runner.os }}-maven-${{ hashFiles('backend/pom.xml') }}
+          cache-restoration-key: ${{ runner.os }}-maven-
+
+      - name: Make scripts executable
+        run: chmod +x ./scripts/*.sh ./backend/mvnw
+
+      - name: Verify env (it profile connection check)
+        run: |
+          # Wait for service containers ready（healthcheck 已配，但额外等待避免 race condition）
+          echo "等待 MySQL/Redis/MinIO 健康..."
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -uroot -ptest --silent 2>/dev/null \
+               && redis-cli ping 2>/dev/null | grep -q PONG \
+               && curl -sf -o /dev/null http://127.0.0.1:9000/minio/health/live; then
+              echo "  ✓ 全部就绪"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run backend tests (mvn verify + it profile)
+        run: cd backend && ./mvnw verify -Dspring.profiles.active=it
+
+      - name: Upload surefire reports (unit)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: backend/target/surefire-reports/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload failsafe reports (integration)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failsafe-reports
+          path: backend/target/failsafe-reports/
+          retention-days: 7
+          if-no-files-found: warn
