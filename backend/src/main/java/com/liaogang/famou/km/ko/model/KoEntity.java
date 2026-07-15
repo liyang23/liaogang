@@ -65,6 +65,9 @@ public class KoEntity {
     /** 软删除标记（MyBatis-Plus 自动过滤 0/1） */
     private Integer isDeleted;
 
+    /** 创建人 sub（来自 JWT，T204 审核流程用） */
+    private String createdBy;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
