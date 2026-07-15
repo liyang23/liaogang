@@ -67,3 +67,20 @@ CREATE TABLE IF NOT EXISTS ko_references (
     description    TEXT             NULL,
     created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS role_permission (
+    id          BIGINT        AUTO_INCREMENT PRIMARY KEY,
+    role_id     VARCHAR(50)   NOT NULL,
+    menu_id     VARCHAR(50)   NOT NULL,
+    operation   VARCHAR(20)   NOT NULL,
+    allowed     INT           NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_role (
+    id            BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    user_sub      VARCHAR(50)  NOT NULL,
+    role_id       VARCHAR(50)  NOT NULL,
+    assigned_by   VARCHAR(50)      NULL,
+    assigned_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
