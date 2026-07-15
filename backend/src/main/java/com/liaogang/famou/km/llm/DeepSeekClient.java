@@ -137,14 +137,47 @@ public class DeepSeekClient {
         }
         Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
         String content = (String) message.get("content");
+        // 千帆 Qianfan 扩展：推理过程（reasoning_content）单独计费
+        String reasoningContent = (String) message.get("reasoning_content");
 
-        // TODO: 实际解析 LLM 输出（JSON 格式：suggestion/confidence/rationale）
-        // 此处 mock 解析
+        // 1. 解析 usage 计费字段（千帆扩展：completion_tokens_details.reasoning_tokens）
+        Map<String, Object> usage = (Map<String, Object>) body.get("usage");
+        Integer promptTokens = null;
+        Integer completionTokens = null;
+        Integer totalTokens = null;
+        Integer reasoningTokens = null;
+        if (usage != null) {
+            promptTokens = asInt(usage.get("prompt_tokens"));
+            completionTokens = asInt(usage.get("completion_tokens"));
+            totalTokens = asInt(usage.get("total_tokens"));
+            Map<String, Object> details = (Map<String, Object>) usage.get("completion_tokens_details");
+            if (details != null) {
+                reasoningTokens = asInt(details.get("reasoning_tokens"));
+            }
+        }
+
+        // 2. 解析 LLM 输出的结构化 JSON（OQ-9 期望 suggestion/confidence/rationale）
+        // TODO: U7 实施时升级为真实 JSON 解析（content 含结构化 JSON → Jackson ObjectMapper）
+        // Sprint 1 范围：保留 mock suggestion/confidence，rationale 取 content
         LlmSuggestion s = new LlmSuggestion();
         s.setSuggestion("OVERRIDE");
         s.setConfidence(0.85);
         s.setRationale(content);
+        s.setReasoning(reasoningContent);
+        s.setPromptTokens(promptTokens);
+        s.setCompletionTokens(completionTokens);
+        s.setTotalTokens(totalTokens);
+        s.setReasoningTokens(reasoningTokens);
         return s;
+    }
+
+    private Integer asInt(Object o) {
+        if (o == null) return null;
+        if (o instanceof Number) return ((Number) o).intValue();
+        if (o instanceof String) {
+            try { return Integer.parseInt((String) o); } catch (NumberFormatException e) { return null; }
+        }
+        return null;
     }
 
     /** LLM 建议响应 */
@@ -156,6 +189,16 @@ public class DeepSeekClient {
         private double confidence;
         /** 理由说明 */
         private String rationale;
+        /** 千帆 Qianfan 扩展：LLM 推理过程（独立计费 reasoning_tokens） */
+        private String reasoning;
+        /** OpenAI usage: prompt token 数（输入） */
+        private Integer promptTokens;
+        /** OpenAI usage: completion token 数（输出） */
+        private Integer completionTokens;
+        /** OpenAI usage: 总 token 数 */
+        private Integer totalTokens;
+        /** 千帆扩展：reasoning 部分 token 数（subset of completion_tokens） */
+        private Integer reasoningTokens;
     }
 
     /** 冲突上下文（输入） */

@@ -82,18 +82,20 @@ app:
     code-verifier-ttl-seconds: 300
     # OQ-23 mock 模式（Q-I2 未提供时返回 mock user info）
     mock-mode: ${LIAOGONG_MOCK_MODE:true}
-  # DeepSeek v4 LLM（Q-I1 待 owner 提供）
+  # DeepSeek v4 LLM（Q-I1 待 owner 提供；实际接入通过百度千帆 Qianfan OpenAI 兼容网关）
   llm:
     provider: deepseek
-    api-key: ${DEEPSEEK_API_KEY:demo-api-key-mock}
-    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com/v4}
-    model: ${DEEPSEEK_MODEL:deepseek-v4}
+    api-key: ${LLM_API_KEY:demo-api-key-mock}
+    base-url: ${LLM_BASE_URL:https://qianfan.baidubce.com/v2}
+    model: ${LLM_MODEL:deepseek-v4-flash}
     # NFR-28 LLM 建议响应 ≤ 5s
     timeout-seconds: 5
     # OQ-T01 平台级 vs 用户级配额（80/20）
     quota:
       platform-percentage: 80
       user-percentage: 20
+    # OQ-T01 月度成本上限（Q-I1 配额收齐后填，TODO）
+    monthly-cost-cap-yuan: 5000
   # MinIO（Q-I3 待 owner 提供）
   minio:
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}

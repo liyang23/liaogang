@@ -150,3 +150,17 @@
   - **全部 frontmatter 验证**：4 个新文档均通过 `spec-compound/scripts/validate-frontmatter.py` exit 0
   - **`docs/solutions/` 总览**：1 篇 Sprint 1 总览 + 4 篇子案例（按 spec-compound 分类：build-errors × 2 / integration-issues × 1 / conventions × 1 / tooling-decisions × 1）
   - **来源**：执行 Sprint 1 复盘文档 `build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md` Related 段列出的 4 个 related solutions
+- v1.16.5 2026-07-15 16:30:00 liyang: LLM 真接入适配（Q-I1 部分信息已收齐：从 llm_client.txt 提取）
+  - **改 `application.yml` `app.llm`**：base-url 默认 `https://api.deepseek.com/v4` → `https://qianfan.baidubce.com/v2`（真实接入走百度千帆 OpenAI 兼容网关，非官方 deepseek.com）；model 默认 `deepseek-v4` → `deepseek-v4-flash`；env var 从 `DEEPSEEK_*` 改 `LLM_*`（更准确反映实际服务来源）
+  - **新增 `monthly-cost-cap-yuan: 5000`**：OQ-T01 月度成本上限占位（Q-I1 配额收齐后由 owner 改）
+  - **改 `DeepSeekClient.parseResponse()`**：适配 OpenAI 标准 + 千帆 Qianfan 扩展 schema
+    · 提取 `message.content`（已用）+ 新增 `message.reasoning_content`（千帆扩展，推理过程独立计费）
+    · 提取 `usage.{prompt,completion,total}_tokens`（OpenAI 标准）
+    · 提取 `usage.completion_tokens_details.reasoning_tokens`（千帆扩展）
+    · 加 `asInt(Object)` 工具方法处理 Number/String/null 三种类型
+    · TODO 注释：U7 实施时升级为真实 JSON 解析（OQ-9 期望 LLM 返回结构化 JSON）
+  - **改 `LlmSuggestion` 字段**（+5 字段）：reasoning / promptTokens / completionTokens / totalTokens / reasoningTokens（埋点数据 + 计费用）
+  - **不需改的**（已兼容）：URL 拼接（`${base-url}/chat/completions`，base-url 含 `/v2` 时拼对）/ Bearer Token 鉴权（`setBearerAuth`）/ RestTemplate 5s timeout（满足 NFR-28）
+  - **Q-I1 仍缺 4 项**（不在本次改动范围）：配额 TPM/TPD / dev URL / 上下文窗口 / 429 fallback 策略
+  - **`mvn compile` 验证**：exit 0（DeepSeekClient + application.yml 改动编译通过）
+  - **来源**：`llm_client.txt`（用户提供的 curl + 响应示例，含百度千帆 Qianfan OpenAI 兼容网关信息）
