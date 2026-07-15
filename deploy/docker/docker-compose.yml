@@ -1,0 +1,89 @@
+# 辽港伐谋 KM 平台 - 本地开发 + 集成测试环境
+# 用途：docker compose 一键启动 MySQL 8 + Redis 7 + MinIO，供 dev / integration test 使用
+# 端口与 backend/src/test/resources/application-it.yml 严格一致
+#
+# 启动：docker compose up -d
+# 停止：docker compose down（保留数据卷）
+# 清理：docker compose down -v
+# 查看：docker compose ps / docker compose logs -f
+# 入口脚本：scripts/test-it.sh（一键 up + test）
+#            scripts/test-env-up.sh（仅 up）
+#            scripts/test-env-down.sh（仅 down）
+
+services:
+  # MySQL 8 - 主库 + 测试库（it 库由 JDBC URL createDatabaseIfNotExist 自动创建）
+  mysql:
+    image: mysql:8.0
+    container_name: km-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: Zcx123456!
+      MYSQL_DATABASE: km_platform
+      MYSQL_USER: km_user
+      MYSQL_PASSWORD: devpass
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --max-connections=512
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pZcx123456!"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # Redis 7 - session 缓存 + LLM 配额计数
+  redis:
+    image: redis:7-alpine
+    container_name: km-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
+
+  # MinIO - 对象存储（S3 兼容；U10 文档预览 / Sprint 4 启用）
+  minio:
+    image: minio/minio:latest
+    container_name: km-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin@2026
+    ports:
+      # API：container 9000 -> host 9001（与 application-it.yml 一致）
+      - "9001:9000"
+      # Console：container 9001 -> host 9002（Web UI）
+      - "9002:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      # MinIO 镜像基于 alpine 内置 busybox wget（无需 curl）
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  mysql_data:
+    name: km_mysql_data
+  redis_data:
+    name: km_redis_data
+  minio_data:
+    name: km_minio_data

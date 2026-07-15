@@ -100,3 +100,19 @@
   - F-205：Plan §System-Wide Impact 加「未明确归属项的责任分配」表（8 行 × 4 列：observability / 备份恢复 / SSO IdP 维护 / 数据迁移 / LLM 配额审批 / 角色变更通知 / 文档预览 / 监控值班）
   - F-204 已被 F-101 覆盖（U5 Patterns 已加 §10.7.3.1 引用 + 具体函数名 switchRoleTab/openRoleAssignmentModal/saveRole/saveUserRole），跳过
   - Plan 行数：950 → 1000+ (+~50 行)
+- v1.16.0 2026-07-14 18:39:51 liyang: Sprint 1 基础架构落地（U1 项目脚手架 + U2 后端基础 + U3 前端基础 全部 10 任务完成 + spec-code-review 24 项安全修复）
+  - U1-T001：建立 Monorepo 单一 git 仓库顶层目录约定（frontend / backend / deploy / docs / scripts）+ README / .gitignore / setup.sh / seed.sh / test.sh (user-visible)
+  - U1-T002：建立 K8s + Helm 部署基础（Chart.yaml / values.yaml / frontend-deployment / backend-deployment / backend-service / ingress / _helpers.tpl）`helm template` 无报错 (user-visible)
+  - U2-T004：建立 Spring Boot 3 后端基础架构（KmApplication / MyBatis-Plus / MySQL 8 / Flyway / HikariCP / SpringDoc OpenAPI / 统一 Result<T> 响应 / BusinessException / GlobalExceptionHandler）`mvn spring-boot:run` 启动 + `/v3/api-docs` 返回 OpenAPI JSON (user-visible)
+  - U2-T005：实现辽港统一认证后端集成（OQ-23 取代原 OIDC）：招商云 PAAS `getUserInfoByCode`（APIKEY 鉴权）+ 本地 user 表创建/查找（sub UUID + preferred_username 工号）+ 5 预置角色查询 + 本地 JWT 签发 + Redis 缓存 + 角色下次登录生效（OQ-12）+ 跨设备撤销不可行（OQ-5） (user-visible)
+  - U2-T006 Part 1：通用基础设施（Result / BusinessException / GlobalExceptionHandler）+ @AuditLog 注解 AOP（AuditAspect 写入 audit_log 表 + AuditLogAnnotation + AuditLogService） (user-visible)
+  - U2-T006 Part 2：DeepSeek v4 客户端（HTTP/SDK + ≤5s 超时控制，NFR-28）+ LLM 配额管理（OQ-9 + OQ-T01，Redis INCR 计数） (user-visible)
+  - U2-T010：Flyway V9001__seed_v032_initial_data.sql seed 脚本，4 项目 + 5 预置角色 + 6 类型 KO 278 条（121+72+49+36 闭环）+ 6 字典 + 9 量纲 + 权限矩阵 150 cells，部署门禁达成（OQ-3 强化：header == list 严格一致） (user-visible)
+  - U3-T007：建立 Vue 3 + Vite + TypeScript + Element Plus + Pinia + Vue Router 4 + Axios 前端基础架构，端口蓝 #0F4C75 主题变量对齐原型 V3，`pnpm dev` 启动 (user-visible)
+  - U3-T008：慧应用 SSO 前端跳转集成（OQ-23 取代原 OIDC）：LoginView + 回调页 code → JWT + Pinia auth store + sessionStorage 持久化 + 401 自动跳登录 + codeVerifier sessionStorage 缓存 (user-visible)
+  - U3-T009：前端跨切组件（Sidebar 侧栏 3 分组 / TopBar 顶栏面包屑+通知+用户 Chip / TablePagination 平台统一分页 / 路由守卫对无权限角色重定向 / Element Plus 主题对齐原型 V3） (user-visible)
+  - 安全修复：spec-code-review 修复 24 项（P0 + P1 + P2 安全加固；JWT 密钥强化 + Lombok @SneakyThrows 替换 + SQL/HQL 注入面关闭 + Spring 表达式注入面关闭 + Actuator 收敛等）
+  - 集成测试环境配置：新增 `backend/src/test/resources/application-it.yml`（`it` profile；MySQL 127.0.0.1:3306/km_platform_it + Redis 127.0.0.1:6379 db 1 + MinIO 127.0.0.1:9001 km-platform-it bucket；Flyway 真实执行；JPA/Hibernate 验证；SpringDoc 启用；minioadmin 凭据入测试资源，生产凭据走 K8s Secret）；单元测试 `application-test.yml` 保持禁用外部依赖不变
+  - 集成测试一键脚本：新增 `deploy/docker/docker-compose.yml`（MySQL 8 + Redis 7 + MinIO 三服务 + healthcheck + 命名 volume 持久化）+ `scripts/test-env-up.sh`（启动 + 等待就绪轮询）+ `scripts/test-env-down.sh`（停止 / `--clean` 清数据卷）+ `scripts/test-it.sh`（up + `mvn test -Dspring.profiles.active=it` + 可选 stop；`--no-up` `--stop` `--clean` 三个 flag 覆盖本地/CI/重置场景）；`scripts/setup.sh` 末尾提示从 `docker-compose up -d` 改为指向 `test-env-up.sh`
+  - 集成测试体系完善：1) `pom.xml` 加 `maven-failsafe-plugin` + 显式 surefire 排除 `*IT.java`，`*Test.java` 走 surefire 单元测试 + `*IT.java` 走 failsafe 集成测试（自动激活 it profile）；2) `scripts/test-it.sh` 从 `mvn test` 改 `mvn verify`；3) 加 `MinioBucketInitializer` 测试配置（it profile 启动时幂等创建 `km-platform-it` bucket）+ `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` 自动发现；4) 加 `spring-security-test` 测试依赖；5) 新增 `AuditAspectIT.java` 集成测试样例（F-12 修复回归：成功 + 失败路径都写审计日志 + action + `_FAILED` 后缀 + ID 格式 `AUDIT-YYYYMMDD-NNNNNN` + anonymous 优雅降级；用 Logback ListAppender 拦截 `AuditLogService` 日志；待 audit_log 表实装后追加 JDBC 验证）
+  - 总变更规模：49 文件 +3682 行（10 个 commit：27069d3 / d2a7481 / fd9f3cc / 20be4d6 / 55e929d / c33b244 / 69a305c / 83bf3e4 / 62c7dc5 / 909d5a2）+ CHANGELOG 1 入口 + it profile 1 文件 + docker-compose 1 文件 + 3 个 shell 脚本 + setup.sh 微调 + failsafe 配置 + bucket 初始化器 + 集成测试样例
