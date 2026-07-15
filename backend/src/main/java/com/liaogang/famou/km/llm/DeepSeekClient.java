@@ -38,14 +38,18 @@ public class DeepSeekClient {
     @Value("${app.llm.api-key:demo-api-key-mock}")
     private String apiKey;
 
-    @Value("${app.llm.base-url:https://api.deepseek.com/v4}")
+    @Value("${app.llm.base-url:https://qianfan.baidubce.com/v2}")
     private String baseUrl;
 
-    @Value("${app.llm.model:deepseek-v4}")
+    @Value("${app.llm.model:deepseek-v4-flash}")
     private String model;
 
     @Value("${app.llm.timeout-seconds:5}")
     private int timeoutSeconds;
+
+    // Q-I1 上下文窗口 100K（deepseek-v4-flash 实际支持 128K，留 22% 余量 = 100K 安全阈值）
+    @Value("${app.llm.context-window-tokens:100000}")
+    private int contextWindowTokens;
 
     // F-2 修复：使用 RestTemplateBuilder 配置 connect/read timeout = 5s（NFR-28 承诺）
     private final RestTemplate restTemplate;
@@ -73,7 +77,20 @@ public class DeepSeekClient {
             return mockSuggestion(conflictContext);
         }
 
-        // 1. 构造请求
+        // 1. 构造请求（Q-I1 上下文窗口 100K 截断）
+        String systemPrompt = buildSystemPrompt();
+        String userPrompt = buildUserPrompt(conflictContext);
+        // F-26 修复：超长 prompt 截断到 contextWindowTokens 阈值（Q-I1 = 100K）
+        // 字符/token 估算：英文 ~4 chars/token，中文 ~1.5 chars/token；保守按 2 chars/token 估算
+        int estimatedTokens = (systemPrompt.length() + userPrompt.length()) / 2;
+        if (estimatedTokens > contextWindowTokens) {
+            log.warn("LLM prompt 超长（{} tokens > 阈值 {} tokens），截断 userPrompt",
+                estimatedTokens, contextWindowTokens);
+            int maxChars = contextWindowTokens * 2 - systemPrompt.length() - 100; // 100 字符 buffer
+            userPrompt = userPrompt.substring(0, Math.min(maxChars, userPrompt.length()))
+                + "\n\n[... 已截断，超出上下文窗口 " + contextWindowTokens + " tokens ...]";
+        }
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
@@ -81,8 +98,8 @@ public class DeepSeekClient {
         Map<String, Object> body = new HashMap<>();
         body.put("model", model);
         body.put("messages", List.of(
-            Map.of("role", "system", "content", buildSystemPrompt()),
-            Map.of("role", "user", "content", buildUserPrompt(conflictContext))
+            Map.of("role", "system", "content", systemPrompt),
+            Map.of("role", "user", "content", userPrompt)
         ));
         body.put("temperature", 0.1);
         body.put("max_tokens", 500);

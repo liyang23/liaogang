@@ -82,7 +82,7 @@ app:
     code-verifier-ttl-seconds: 300
     # OQ-23 mock 模式（Q-I2 未提供时返回 mock user info）
     mock-mode: ${LIAOGONG_MOCK_MODE:true}
-  # DeepSeek v4 LLM（Q-I1 待 owner 提供；实际接入通过百度千帆 Qianfan OpenAI 兼容网关）
+  # DeepSeek v4 LLM（Q-I1 已收齐；通过百度千帆 Qianfan OpenAI 兼容网关）
   llm:
     provider: deepseek
     api-key: ${LLM_API_KEY:demo-api-key-mock}
@@ -94,8 +94,17 @@ app:
     quota:
       platform-percentage: 80
       user-percentage: 20
-    # OQ-T01 月度成本上限（Q-I1 配额收齐后填，TODO）
-    monthly-cost-cap-yuan: 5000
+    # Q-I1 配额（已收齐 2026-07-15）
+    tpm: 100000                       # 每分钟 100K tokens
+    tpd: 10000000                     # 每天 10M tokens（10h × 10 批/h × 100K/batch）
+    monthly-cost-cap-yuan: 5000       # 月度成本上限 5000 元
+    # Q-I1 上下文窗口 100K
+    context-window-tokens: 100000     # 100K tokens（超长 conflict context 截断阈值）
+    # Q-I1 dev/staging URL 保持一致（与 prod 同 endpoint）
+    dev-staging-same-as-prod: true
+    # 单元成本（Q-I1 收齐后按实际模型定价调整；用于月度成本扣减计算）
+    # deepseek-v4-flash 估算：¥0.002 / 1K tokens（含 reasoning_tokens）
+    cost-yuan-per-1k-tokens: 0.002
   # MinIO（Q-I3 待 owner 提供）
   minio:
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}

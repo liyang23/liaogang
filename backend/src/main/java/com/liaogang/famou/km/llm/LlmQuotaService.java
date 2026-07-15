@@ -30,6 +30,19 @@ public class LlmQuotaService {
     @Value("${app.llm.quota.daily-platform-limit:1000}")
     private int dailyPlatformLimit;
 
+    // Q-I1 配额（已收齐 2026-07-15；当前 Sprint 1 仍 mock，Sprint 3 升级 token 限流时启用）
+    @Value("${app.llm.tpm:100000}")
+    private long tpmLimit;
+
+    @Value("${app.llm.tpd:10000000}")
+    private long tpdLimit;
+
+    @Value("${app.llm.monthly-cost-cap-yuan:5000}")
+    private double monthlyCostCapYuan;
+
+    @Value("${app.llm.cost-yuan-per-1k-tokens:0.002}")
+    private double costYuanPer1kTokens;
+
     // F-24 修复：test profile 排除 RedisAutoConfiguration 时允许为 null（useRedisMock 兜底）
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private StringRedisTemplate redisTemplate;

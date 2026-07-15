@@ -164,3 +164,26 @@
   - **Q-I1 仍缺 4 项**（不在本次改动范围）：配额 TPM/TPD / dev URL / 上下文窗口 / 429 fallback 策略
   - **`mvn compile` 验证**：exit 0（DeepSeekClient + application.yml 改动编译通过）
   - **来源**：`llm_client.txt`（用户提供的 curl + 响应示例，含百度千帆 Qianfan OpenAI 兼容网关信息）
+- v1.16.6 2026-07-15 16:15:00 liyang: Q-I1 完整 4 项收齐（TPM/TPD/月成本/上下文窗口）+ 上下文截断 + solution 沉淀
+  - **Q-I1 完整信息已收齐**（2026-07-15 算法团队提供）：
+    · TPM=100000（每分钟 100K tokens）
+    · TPD=10*10*100000=10000000（每天 10M tokens；10h × 10 批/h × 100K/batch）
+    · 月度成本上限 5000 元
+    · dev/staging URL 与 prod 一致（都用 qianfan.baidubce.com/v2）
+    · 上下文窗口 100K tokens
+  - **`application.yml` `app.llm` 完整 4 项配置**（Q-I1 已收齐）：
+    · `tpm: 100000` / `tpd: 10000000` / `monthly-cost-cap-yuan: 5000` / `cost-yuan-per-1k-tokens: 0.002`
+    · `context-window-tokens: 100000`（deepseek-v4-flash 实际 128K 留 22% buffer）
+    · `dev-staging-same-as-prod: true`（dev/staging 用同 endpoint）
+  - **`LlmQuotaService` 加 4 个 @Value 字段**：`tpmLimit` / `tpdLimit` / `monthlyCostCapYuan` / `costYuanPer1kTokens`（配置就位，Sprint 3 U7 升级 token 限流时直接用）
+  - **`DeepSeekClient` 加上下文窗口 100K 截断**（F-26 修复）：
+    · `@Value` 读 `context-window-tokens: 100000`
+    · 估算 prompt tokens（按 2 chars/token，含中英文保守）
+    · 超阈值时截断 userPrompt + 追加截断提示
+    · 防 400 错误（超长 conflict context 触发 LLM 400）
+  - **`DeepSeekClient.parseResponse()` 补 reasoning_tokens 字段**（千帆扩展）已就位（v1.16.5）
+  - **新建 `docs/solutions/integration-issues/q-i1-real-llm-integration.md`**：Q-I1 真接入沉淀（spec-compound integration_issue track；含 llm_client.txt 提取的 endpoint / 鉴权 / 模型 / 配额 / 上下文 5 项配置 + Sprint 3 升级 token 限流的预防措施）
+  - **`mvn clean verify` 验证**：exit 0（5/5 测试通过，1 单元 + 4 集成）
+  - **配置可立即生效**：dev 环境设置 `LLM_API_KEY=bce-v3/...` 环境变量 → 重启 backend → 走真 LLM 接入（mock 兜底仍在，api-key=demo 时走 mock）
+  - **后续 Sprint 3 U7 实施时直接用** `tpm` / `tpd` / `monthlyCostCapYuan` / `costYuanPer1kTokens` 4 字段升级 token 限流（无需再改 yml）
+  - **docs/solutions/ 总览**：6 篇（build-errors × 2 / conventions × 1 / integration-issues × 2 / tooling-decisions × 1）
