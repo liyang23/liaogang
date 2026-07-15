@@ -215,3 +215,28 @@
     · Q-I4 §3 手动子项弹层 UI 细节（sparring 业务专家）
     · Q-I2 / Q-I3 prod 联调时由 IT/安全 + 基础架构提供
   - **未实施**（按用户选择 "写 TP-2 task pack + 分支准备（不实施）"）：T201~T211 待 task pack review 后再启动
+- v1.17.2 2026-07-15 19:11:00 liyang: T201 实施 - U4 数据模型 + 状态机（Wave 1 完成）
+  - **新建 `backend/src/main/resources/db/migration/V9002__create_ko_tables.sql`**（5 张表）：
+    · `project` 表（V9001 seed 依赖；V9001 隐含需要，T201 范围扩展补建）
+    · `role` 表（同 project 理由）
+    · `ko` 表（KO 库主表；6 类型 CON/RUL/PAR/SCH/PRM/DOC 共 278 条；ID 格式 KO-{TYPE}-{NNNN}）
+    · `ko_version` 表（KO 版本历史；编辑触发版本号递增 v{MAJOR}.{MINOR}.{PATCH}）
+    · `ko_references` 表（KO 引用关系：DEPENDENCY/REFERENCE/CONFLICT）
+    · F-22 + F-8 修复：START TRANSACTION + COMMIT 包装 + IF NOT EXISTS 幂等
+  - **新建 `backend/src/main/java/.../ko/model/KoEntity.java`**：KO 主表实体（MyBatis-Plus @TableName + @TableId IdType.INPUT）
+  - **新建 `KoVersionEntity.java` + `KoReferenceEntity.java`**：版本历史 + 引用关系实体
+  - **新建 `KoMapper.java` + `KoVersionMapper.java`**：MyBatis-Plus BaseMapper（@MapperScan 已由 KmApplication 配置）
+  - **新建 `KoStateMachine.java`**：5 状态转换守卫 + DOC 类型豁免 + OQ-12 状态机约束
+    · Draft → Review → Approved → Published → Active
+    · DOC 豁免：Draft → Active（§5.2.1.4）
+    · PRM 走标准流程（OQ-6）
+    · Active 终止态
+    · 同 KO 最多 1 个 in-flight 工作版本
+  - **新建 `KoStateMachineTest.java`**：11 个单测覆盖（5 状态 + 类型豁免 + 终止态 + OQ-12 + initialStatus + 同状态幂等）
+  - **修复 `application-test.yml` + `application.yml` + `pom.xml`（F-27 修复）**：
+    · pom.xml 加 `h2` test scope（test profile 用 H2 内存数据库）
+    · `application.yml` 删 JPA 段（项目用 MyBatis-Plus，不需要 JPA 实体扫描）
+    · `application-test.yml` 加 H2 datasource（jdbc:h2:mem:km_test;MODE=MySQL）+ 排除 HibernateJpaAutoConfiguration + JpaRepositoriesAutoConfiguration
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，16/16 测试通过（KmApplicationTests 1/1 + KoStateMachineTest 11/11 + AuditAspectIT 4/4）
+  - **P1 三层防御实际工作**：pre-commit 跑 mvn compile（5+ 文件改动） + pre-push 跑 mvn verify（含 4 集成测试 + it profile）
+  - **下个任务**：T202（U4 CRUD + 跨类搜索 REST API，依赖 T201）

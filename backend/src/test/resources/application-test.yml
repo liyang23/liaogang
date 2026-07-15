@@ -1,11 +1,34 @@
-# Test profile - 禁用外部依赖
+# Test profile - H2 内存数据库（让 MyBatis-Plus Mapper 注入 SqlSessionFactory）+ 禁用外部依赖
 spring:
+  # F-27 修复：test profile 启用 H2 内存数据库（之前排除 DataSourceAutoConfiguration 导致 KoMapper bean 创建失败）
+  datasource:
+    url: jdbc:h2:mem:km_test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  # MyBatis-Plus 兼容 H2（MySQL 模式）
+  mybatis-plus:
+    configuration:
+      map-underscore-to-camel-case: true
+    global-config:
+      db-config:
+        logic-delete-field: is_deleted
+        logic-delete-value: "1"
+        logic-not-delete-value: "0"
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+  data:
+    jpa:
+      repositories:
+        enabled: false
   flyway:
     enabled: false
 
