@@ -198,3 +198,20 @@
   - **新建 `docs/private/README.md`**：说明目录用途（本地私有文件，不进 git）+ 添加新文件约定 + Sprint 1 已存放文件清单（`llm_client.txt` 等）
   - **`git status` 清理**：untracked 列表从 8 项减到 6 项（`docs/private/` 整目录隐藏 / `llm_client.txt` / `test_env.txt` 隐藏 / 中文 docx 隐藏）
   - **mvn 验证**：不需要（纯配置文件改动，但 push 时 hook 仍跑 mvn compile + mvn verify）
+- v1.17.0 2026-07-15 16:25:00 liyang: Sprint 2 启动 - TP-2 task pack 落地（U4 KO 库 + U5 权限 + U6 提示词）
+  - **新建 `feat/sprint-2-ko-and-permissions` 分支** + worktree（`.worktrees/sprint-2`）：基于 main bb839ab 拉出
+  - **新建 `docs/tasks/2026-07-15-001-task-pack-sprint-2-ko-and-permissions.md`**（570 行；按 Sprint 1 task pack 模板）：
+    · 3 个 Implementation Unit 拆 11 个 task：U4 拆 T201~T204（数据模型 + CRUD + 前端 + 审核流），U5 拆 T205~T207（数据模型 + UI + 下次登录生效），U6 拆 T208~T211（PRM 模板 + Handlebars + 三栏组装器 + PRP 装配数）
+    · 4 个 wave 按 U 依赖：Wave 1（T201 数据模型基础）→ Wave 2（T202~T205 U4 业务 + U5 数据）→ Wave 3（T206~T208 权限 UI + 下次登录 + PRM）→ Wave 4（T209~T211 Handlebars + 三栏 + PRP）
+    · 每个 task 详细列：goal / dependencies / files / test_focus / done_signal / risk_note / review_gate / review_focus / stop_if
+    · frontmatter 含 spec_id / source_plan / mode: derived / status: derived（与 Sprint 1 同结构）
+    · source_plan_hash: pending-validation（待 Sprint 2 启动后跑 `spec-first tasks validate` 验证）
+  - **Sprint 2 不依赖 Q-I1**：U6 提示词系统的实时预览是前端自研 Handlebars 渲染，不调 LLM API；Q-I1 完整 4 项已收齐（端点 + Bearer + deepseek-v4-flash + TPM/TPD/月成本/上下文）但仅 U7 知识治理需要
+  - **依赖 Sprint 1 已完成**：
+    · U1（Monorepo + K8s）/ U2（后端基础）/ U3（前端基础）已落地
+    · 集成测试环境（MySQL + Redis + MinIO 真实环境）已就绪
+    · P1 三层编译门禁（pre-commit / pre-push / GitHub Actions）已部署，Sprint 2 实施时自动防护
+  - **owner 输入仍待 Sprint 2 启动后收齐**：
+    · Q-I4 §3 手动子项弹层 UI 细节（sparring 业务专家）
+    · Q-I2 / Q-I3 prod 联调时由 IT/安全 + 基础架构提供
+  - **未实施**（按用户选择 "写 TP-2 task pack + 分支准备（不实施）"）：T201~T211 待 task pack review 后再启动
