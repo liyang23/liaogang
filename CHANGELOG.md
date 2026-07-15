@@ -126,3 +126,12 @@
   - **host 探测**：`test-env-up.sh` 加 MySQL/Redis/MinIO 协议层探测（python socket + curl），已部署则跳过 docker compose up；覆盖本机（已装服务）+ CI（无服务）双场景
   - **未 commit**（spec-first 全局配置不进 Sprint 1）：`.claude/settings.json` 4 个 hook args 改绝对路径（根治 Stop hook 在子目录解析失败）`backend/target/`（构建产物）/ `backend/logs/`（运行时日志）/ `docs/tasks/`（task pack）
   - 总变更规模：17 文件 +204 / -126 行（编译错误修复 + 集成测试环境 + hook 路径根治）
+- v1.16.2 2026-07-15 14:06:00 liyang: 沉淀 Sprint 1 缺编译门禁教训（spec-compound knowledge，docs/solutions/）
+  - 新增 `docs/solutions/build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md`（11.5 KB / 196 行；spec-compound Bug track 模板）：复盘 Sprint 1 12 commit 0 次 `mvn compile` 验证导致 15+ 编译错误的根因
+  - **Problem**：9 commit 累计 25 main java 文件改动，0 次 mvn compile 验证；仓库无 `.github/workflows/` / `.githooks/` / pre-commit hook；task pack 写了 `test_focus` 但只挂在文档里没人执行
+  - **Root cause**：`missing_tooling`（commit 流程缺任何形式的 mvn compile 门禁）
+  - **Resolution**：`workflow_improvement`（加 3 层防御：pre-commit `mvn compile` / pre-push `mvn verify` / GitHub Actions CI）
+  - **Prevention**（P1/P2/P3 分层）：pre-commit hook + pre-push hook + GitHub Actions + task pack test_focus 自动化 + 环境健康检查 + Flyway 顺序约定 + commit task_id 规范 + Sprint 收尾必跑清单
+  - **Frontmatter** 严格按 `spec-compound/references/schema.yaml` Bug track 模板（title/date/category/module/problem_type/component/severity/symptoms[5]/root_cause/resolution_type + 新 promote 必填 `invalidation_condition` / `source_refs` + 8 tags）；通过 `validate-frontmatter.py` exit 0
+  - **Related solutions 待立**（本文档 Related 段列出，本次未立）：MinIO 端口语义 / Lombok `@RequiredArgsConstructor` 冲突 / public `@interface` 文件名规范 / Stop hook 绝对路径
+  - 关联 commit：`d676c27` (fix backend) + Sprint 1 全部 12 commit（9 原始 + 2 集成/安全 + 1 fix）
