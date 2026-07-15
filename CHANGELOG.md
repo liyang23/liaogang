@@ -187,3 +187,14 @@
   - **配置可立即生效**：dev 环境设置 `LLM_API_KEY=bce-v3/...` 环境变量 → 重启 backend → 走真 LLM 接入（mock 兜底仍在，api-key=demo 时走 mock）
   - **后续 Sprint 3 U7 实施时直接用** `tpm` / `tpd` / `monthlyCostCapYuan` / `costYuanPer1kTokens` 4 字段升级 token 限流（无需再改 yml）
   - **docs/solutions/ 总览**：6 篇（build-errors × 2 / conventions × 1 / integration-issues × 2 / tooling-decisions × 1）
+- v1.16.7 2026-07-15 16:14:00 liyang: 移 llm_client.txt 到 docs/private/ + .gitignore 强化（防误 commit 真实凭证）
+  - **`mv llm_client.txt docs/private/llm_client.txt`**：含 Q-I1 真实 API key（`bce-v3/ALTAK-...`），从仓库根目录移至 `docs/private/` 私有目录
+  - **`.gitignore` 末尾加 5 段自定义规则**（spec-first 段外）：
+    · `docs/private/` 整目录 ignore（含真实凭证的本地参考文件）
+    · `llm_client.txt` 兼容旧路径 ignore（根目录误放也安全）
+    · `test_env.txt` ignore（用户提供的 MySQL root 密码等敏感信息）
+    · `辽港*.docx` / `*.md.orig` ignore（产品资料 / 编辑器备份）
+    · `.vscode/` / `.idea/` / `*.swp` / `*.swo` / `.DS_Store` ignore（编辑器配置）
+  - **新建 `docs/private/README.md`**：说明目录用途（本地私有文件，不进 git）+ 添加新文件约定 + Sprint 1 已存放文件清单（`llm_client.txt` 等）
+  - **`git status` 清理**：untracked 列表从 8 项减到 6 项（`docs/private/` 整目录隐藏 / `llm_client.txt` / `test_env.txt` 隐藏 / 中文 docx 隐藏）
+  - **mvn 验证**：不需要（纯配置文件改动，但 push 时 hook 仍跑 mvn compile + mvn verify）

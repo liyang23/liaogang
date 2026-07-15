@@ -44,3 +44,20 @@
 .graphify/
 graphify-out/
 # spec-first:end
+
+# 本地私有文件（不进 git；含真实凭证 / 接口信息）
+# 整目录 ignore（私有文件），但白名单 README.md / .gitkeep 可入库（说明目录用途）
+docs/private/*
+!docs/private/README.md
+!docs/private/.gitkeep
+llm_client.txt
+test_env.txt
+# 项目外部资料（产品资料 / 慧应用文档）
+辽港*.docx
+*.md.orig
+# 编辑器配置
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
