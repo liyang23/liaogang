@@ -72,3 +72,10 @@ build/
 # 日志
 *.log
 logs/
+
+# 前端 pnpm 锁文件 + 配置（机器特定；用 package.json scripts 即可）
+frontend/.npmrc
+frontend/pnpm-workspace.yaml
+frontend/pnpm-lock.yaml
+frontend/dist/
+frontend/node_modules/

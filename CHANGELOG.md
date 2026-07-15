@@ -240,3 +240,69 @@
   - **`mvn clean verify` 测试结果**：BUILD SUCCESS，16/16 测试通过（KmApplicationTests 1/1 + KoStateMachineTest 11/11 + AuditAspectIT 4/4）
   - **P1 三层防御实际工作**：pre-commit 跑 mvn compile（5+ 文件改动） + pre-push 跑 mvn verify（含 4 集成测试 + it profile）
   - **下个任务**：T202（U4 CRUD + 跨类搜索 REST API，依赖 T201）
+- v1.17.3 2026-07-15 21:53:00 liyang: T202 实施 - U4 CRUD + 跨类搜索（Wave 2 完成）
+  - **新建 `ko/dto/KoListItem.java` + `KoDetail.java` + `KoSearchResult.java`**：3 个 DTO 类型（list 列表项 + 详情含 references + 搜索结果含 matchedField）
+  - **新建 `ko/service/KoService.java`**：6 业务方法
+    · `createKo`：按类型生成 ID（KO-{TYPE}-{NNNN}，F-29 简化实现 selectCount+1，T203 升级为雪花算法）
+    · `getById`：跨项目隔离（X-Project-Id 校验，40403 拒绝跨项目访问）
+    · `listKo`：按 type/projectId/status 过滤 + 分页（MyBatis-Plus Page）
+    · `searchKo`：跨类搜索 OQ-4（**F-36 修复**：3 字段全搜 title + id + typeName，之前只搜 title/id）
+    · `updateKo`：跨项目隔离 + 状态机守卫（状态变更在 T204 处理）
+    · `softDelete`：标记 is_deleted=1
+    · 6 类型中文名映射（CON 约束 / RUL 规则 / PAR 参数 / SCH 数据结构 / PRM 提示词模板 / DOC 文档）
+  - **新建 `ko/controller/KoController.java`**：6 REST API 端点
+    · POST /api/ko（创建）
+    · GET /api/ko/{id}（详情）
+    · GET /api/ko（列表 + 分页）
+    · GET /api/ko/search（跨类搜索 OQ-4）
+    · PUT /api/ko/{id}（更新）
+    · DELETE /api/ko/{id}（软删除）
+    · 跨项目隔离通过 X-Project-Id header
+  - **新建 `test/db/test-schema.sql` + 新建 `test/.../KoControllerIT.java`**：
+    · 8 个集成测试覆盖（createAndGet / searchByTitle / searchById / searchByTypeName / searchByTypesFilter / listByType / crossProjectIsolation / softDelete）
+    · F-30 修复：test-schema.sql 绕开 Flyway MySQL DDL（H2/CLOB→TEXT 兼容 + IF NOT EXISTS 幂等）
+    · F-31 修复：@AutoConfigureMockMvc(addFilters=false) 绕过 Spring Security 默认 403
+    · F-32 修复：@Transactional + @Rollback 测试数据自动回滚
+    · F-33/34/35 修复：用 UUID 唯一 title/code/projectId 避免 V9001 seed 278 条 KO 干扰测试
+  - **F-36 关键修复**：`KoService.searchKo` 实际只查 title+id，没查 typeName（OQ-4 3 字段缺 1）；修后用 TYPE_NAMES 反查匹配 types，再 SQL `OR type IN (...)`，3 字段全搜
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**24/24 测试通过**（KmApplicationTests 1/1 + KoStateMachineTest 11/11 + AuditAspectIT 4/4 + KoControllerIT 8/8）
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify（含集成测试）
+  - **下个任务**：T203（U4 前端 KO 库 + 详情页，依赖 T201/T202 完成后前端集成）
+- v1.17.4 2026-07-15 22:10:00 liyang: T203 实施 - U4 前端 KO 库（Wave 2 完成）
+  - **新建 `frontend/src/api/ko.ts`**：KO 库 API 客户端（封装后端 6 个端点 + TypeScript interface 与后端 DTO 一一对齐）
+    · 类型定义：KoEntity / KoListItem / KoDetail / KoReference / KoSearchResult / Page
+    · 6 个 API 调用：createKo / getKo / listKo / searchKo / updateKo / deleteKo
+    · KO_TYPE_NAMES 6 类型中文名映射（与后端 KoService 一致）
+  - **新建 `frontend/src/views/ko-library/KoLibraryView.vue`**：KO 库全景概览页
+    · 6 类型入口卡片（CON / RUL / PAR / SCH / PRM / DOC，端口蓝 #0F4C75 + 阴影 hover）
+    · 跨类搜索框（OQ-4：title + id + typeName 任意字段）
+    · 搜索结果表格 + matchedField 标签（success/warning/info）
+  - **新建 `frontend/src/views/ko-library/KoTypeListView.vue`**：类型列表页（URL /ko-:type）
+    · Element Plus el-table 列表（ID / 标题 / 版本 / 状态标签 / 项目 / 更新时间）
+    · 状态标签：Active(green) / Published(blue) / Review/Approved(warning) / 其他(info)
+    · 行点击跳详情 + TablePagination 通用分页组件
+  - **新建 `frontend/src/views/ko-library/KoDetailView.vue`**：KO 详情页（URL /ko-:type/:id）
+    · el-page-header 返回 + el-descriptions 完整字段 + 形式化定义（JetBrains Mono 等宽字体）
+    · 引用关系列表（KoReference，T204 实施时填具体数据）
+    · 编辑/删除按钮（删除带 ElMessageBox 二次确认）
+  - **router 已预配置**（Sprint 1 + T203 之前）：ko-library / ko-:type / ko-:type/:id 3 条路由引用 3 个 view，无需改 router
+  - **本地验证缺失**：`pnpm` 不在 PATH（`pnpm install` 跑过但 `node_modules` 已清空）。前端构建验证依赖 GitHub Actions CI（已配置 pnpm install + pnpm build）
+  - **`mvn clean verify` 后端测试**：未跑（T203 是纯前端 task；P1 三层防御 pre-commit / pre-push 自动跑后端测试 5/5）
+  - **下个任务**：T204（U4 审核流 + DOC/PRM 豁免，依赖 T201 + T202 完成后）
+- v1.17.5 2026-07-15 22:30:00 liyang: Sprint 1 router 配错修复 - 10 个占位 view 文件（让 vite build 跑通）
+  - **根因**：Sprint 1 router/index.ts 预先配置 15 个 view 路由，但只实现了 LoginView + DefaultLayout（2 个）；剩余 13 个 view 引用但文件不存在，**导致 vite build 失败 + frontend 构建无法验证**
+  - **F-37 修复**：创建 10 个占位 view（Sprint 2/3 后续 task 实施时替换）：
+    · dashboard/DashboardView.vue（首页，T205+ 实施）
+    · audit/AuditLogView.vue（审计日志，U9 实施）
+    · conflicts/ConflictsView.vue（冲突管理，U7 实施）
+    · dict/DictMgmtView.vue（字典管理，U9 实施）
+    · project/ProjectMgmtView.vue（项目管理，U9 实施）
+    · permissions/PermissionsView.vue（权限矩阵，U5 实施）
+    · prompts/PromptsView.vue（PRM 列表，U6 实施）
+    · prompts/ComposerView.vue（三栏组装器，U6 实施）
+    · prompts/SnapshotsView.vue（PRP 快照，U8 实施）
+    · NotFoundView.vue（404 wildcard 占位）
+  - **F-38 修复**：`.gitignore` 加 `frontend/dist/` / `frontend/node_modules/` / `frontend/.npmrc` / `frontend/pnpm-*.yaml` 忽略（机器特定 + 构建产物）
+  - **验证**：`vite build` 跑通，dist/ 完整生成（合计 320 modules transformed）
+    · T203 4 个 view 编译成功（KoLibraryView 2.93KB / KoTypeListView 3.65KB / KoDetailView 4.10KB / api/ko.ts 1.10KB）
+  - **后续**：占位 view 实施时按 Sprint 2/3 task 顺序替换（U4→U5→U6→U7→U8→U9）
