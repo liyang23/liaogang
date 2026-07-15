@@ -142,3 +142,11 @@
   - **README 增强**：在"快速开始"前加"开发者首次 clone 必做"段，明确 `git config core.hooksPath .githooks` 启用步骤 + 三层 hook 行为表 + 跳过 flag（`--no-verify`）+ 关联 solution 文档
   - **本地启用**：`git config core.hooksPath .githooks` 已在主仓配置；新 clone 的开发者首次运行该命令即可
   - **来源**：Sprint 1 复盘 `docs/solutions/build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md` P1 提案
+- v1.16.4 2026-07-15 15:50:00 liyang: 立 4 个 related solution 文档（spec-compound 沉淀 Sprint 1 子案例）
+  - **新建 `docs/solutions/integration-issues/minio-port-semantics.md`**：MinIO 端口语义（9000 = S3 API / 9001 = Console Web UI；`test_env.txt` 写反是源头）。track=integration_issue / component=tooling / severity=medium
+  - **新建 `docs/solutions/build-errors/lombok-required-args-constructor-conflict.md`**：Lombok `@RequiredArgsConstructor` 与手动构造器签名冲突导致重复定义。track=build_error / component=tooling。含 `AuditLogService` 字段注入 + `DeepSeekClient` 构造器合并两种修法
+  - **新建 `docs/solutions/conventions/java-public-type-filename.md`**：Java 规范 public type 必须与文件名匹配（JLS §7.6）；注解 vs 实体同名冲突解决方案。track=convention / component=tooling
+  - **新建 `docs/solutions/tooling-decisions/stop-hook-absolute-paths.md`**：Claude Code Stop hook 相对路径在 worktree 子目录解析失败；改绝对路径根治。track=tooling_decision / component=tooling
+  - **全部 frontmatter 验证**：4 个新文档均通过 `spec-compound/scripts/validate-frontmatter.py` exit 0
+  - **`docs/solutions/` 总览**：1 篇 Sprint 1 总览 + 4 篇子案例（按 spec-compound 分类：build-errors × 2 / integration-issues × 1 / conventions × 1 / tooling-decisions × 1）
+  - **来源**：执行 Sprint 1 复盘文档 `build-errors/2026-07-15-001-sprint-1-compile-gate-missing.md` Related 段列出的 4 个 related solutions
