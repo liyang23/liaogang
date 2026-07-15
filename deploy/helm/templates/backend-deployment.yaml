@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "km-platform.common.names.fullname" . }}-backend
+  labels:
+    {{- include "km-platform.common.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.backend.autoscaling.enabled }}
+  replicas: {{ .Values.backend.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "km-platform.backend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "km-platform.backend.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.springProfiles.active | default "prod" }}
+            - name: SPRING_DATASOURCE_URL
+              value: {{ .Values.config.spring.datasource.url }}
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.config.spring.datasource.username | quote }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: {{ .Values.config.spring.datasource.password | quote }}
+            - name: SPRING_REDIS_HOST
+              value: {{ .Values.config.spring.redis.host }}
+            - name: SPRING_REDIS_PORT
+              value: {{ .Values.config.spring.redis.port | quote }}
+            - name: APP_LIAOGONG_AUTH_API_KEY
+              value: {{ .Values.config.app.liaogong-auth.api-key | quote }}
+            - name: APP_LIAOGONG_AUTH_PAAS_BASE_URL
+              value: {{ .Values.config.app.liaogong-auth.paas-base-url | quote }}
+            - name: APP_LIAOGONG_AUTH_ENDPOINT
+              value: {{ .Values.config.app.liaogong-auth.endpoint | quote }}
+            - name: APP_LLM_API_KEY
+              value: {{ .Values.config.app.llm.api-key | quote }}
+            - name: APP_LLM_BASE_URL
+              value: {{ .Values.config.app.llm.base-url | quote }}
+            - name: APP_LLM_MODEL
+              value: {{ .Values.config.app.llm.model | quote }}
+            - name: APP_LLM_TIMEOUT_SECONDS
+              value: {{ .Values.config.app.llm.timeout-seconds | quote }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20

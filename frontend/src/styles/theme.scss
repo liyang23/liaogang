@@ -1,0 +1,73 @@
+// 辽港伐谋 KM 平台 Element Plus 主题（v0.32 PRD §10.7.1）
+// 颜色令牌详见 DESIGN.md
+:root {
+  // 端口蓝主色
+  --port-blue: #0F4C75;
+  --port-blue-light: #1E6A9D;
+
+  // 信号橙强调色
+  --signal-orange: #ED8936;
+  --signal-orange-deep: #C26418;
+
+  // 文字色
+  --text-primary: #1A2332;
+  --text-secondary: #5A6373;
+  --text-tertiary: #8A92A0;
+
+  // 背景
+  --bg-canvas: #F5F6F8;
+  --bg-paper: #FFFFFF;
+  --bg-rail: #0F1E2E;
+  --bg-rail-active: #173552;
+
+  // 边框
+  --border: #DCE0E6;
+  --border-strong: #B0B7C0;
+}
+
+// 覆盖 Element Plus 主色（端口蓝）
+:root {
+  --el-color-primary: var(--port-blue);
+  --el-color-primary-light-3: #4A6B8E;
+  --el-color-primary-light-5: #6E89A6;
+  --el-color-primary-light-7: #92A7BF;
+  --el-color-primary-light-8: #A4B6C9;
+  --el-color-primary-light-9: #B6C5D3;
+  --el-color-primary-dark-2: #0B3D60;
+
+  --el-color-warning: var(--signal-orange);
+  --el-color-danger: #C53030;
+  --el-color-success: #2F855A;
+
+  // 字体
+  --el-font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+// 全局样式
+* {
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--el-font-family);
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+}
+
+// 等宽字体（KO ID / 版本号 / 代码）
+.mono {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+// 路由切换淡入
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

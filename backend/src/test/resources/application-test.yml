@@ -1,0 +1,22 @@
+# Test profile - 禁用外部依赖
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+  flyway:
+    enabled: false
+
+# Test 时禁用 SpringDoc UI（避免启动 Web 容器）
+springdoc:
+  swagger-ui:
+    enabled: false
+
+# Test 时禁用 actuator 安全性
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

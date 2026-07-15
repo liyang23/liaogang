@@ -1,0 +1,145 @@
+# 端口
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# Profile
+spring:
+  profiles:
+    active: dev
+
+  # MySQL 8 数据源（Q-I3 MinIO 部署位置 / 启动后由 ops 覆盖）
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:km_platform}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:km_user}
+    password: ${DB_PASSWORD:devpass}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  # JPA（Spring Data JPA，MyBatis-Plus 走 @MapperScan 单独配置）
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Flyway 管 schema，JPA 只 validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+
+  # Flyway 数据库迁移
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+
+  # Redis 7（OQ-12 角色下次登录生效缓存）
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+  # 文件上传（FR-38 文档预览）
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # Jackson（统一时区）
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+# SpringDoc OpenAPI 3
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  packages-to-scan: com.liaogang.famou.km
+
+# 辽港统一认证（OQ-23 取代 OIDC）
+app:
+  liaogong-auth:
+    # Q-I2 待 owner 提供（IT/安全 + 慧应用项目组：杨赫/白雪/尹大为/于广交）
+    api-key: ${LIAOGONG_API_KEY:demo-api-key-mock}
+    paas-base-url: ${LIAOGONG_PAAS_BASE_URL:https://appstore.cmft.com/paas-market}
+    endpoint: /api/v1/system/getUserInfoByCode
+    # OQ-21 codeVerifier sessionStorage 缓存过期时间
+    code-verifier-ttl-seconds: 300
+    # OQ-23 mock 模式（Q-I2 未提供时返回 mock user info）
+    mock-mode: ${LIAOGONG_MOCK_MODE:true}
+  # DeepSeek v4 LLM（Q-I1 待 owner 提供）
+  llm:
+    provider: deepseek
+    api-key: ${DEEPSEEK_API_KEY:demo-api-key-mock}
+    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com/v4}
+    model: ${DEEPSEEK_MODEL:deepseek-v4}
+    # NFR-28 LLM 建议响应 ≤ 5s
+    timeout-seconds: 5
+    # OQ-T01 平台级 vs 用户级配额（80/20）
+    quota:
+      platform-percentage: 80
+      user-percentage: 20
+  # MinIO（Q-I3 待 owner 提供）
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minio}
+    secret-key: ${MINIO_SECRET_KEY:minio123}
+    bucket-name: ${MINIO_BUCKET:km-platform-docs}
+  # 应用通用配置
+  app-name: 辽港伐谋 KM 平台
+  app-version: 1.0.0-SNAPSHOT
+  # 审计日志
+  audit:
+    # 12 个月保留（FR-26 验收 #6）
+    retention-months: 12
+    # 按月分区（建议生产环境启用）
+    partition-by-month: false
+
+# Actuator 健康检查 + 性能监控
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# 日志
+logging:
+  level:
+    root: INFO
+    com.liaogang.famou.km: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
+  file:
+    name: logs/km-platform.log
+    max-size: 100MB
+    max-history: 30
+
+# 跨域（统一由 SecurityConfig.corsConfigurationSource 读取 CORS_ALLOWED_ORIGINS 环境变量）
+# F-6 修复：避免与 SecurityConfig 双源配置漂移，仅保留 CORS_ALLOWED_ORIGINS 环境变量入口
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}

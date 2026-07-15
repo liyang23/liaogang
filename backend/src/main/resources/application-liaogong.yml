@@ -1,0 +1,18 @@
+# 辽港统一认证（v0.32 OQ-23：取代原 OIDC）
+app:
+  liaogong-auth:
+    # Q-I2 待 owner 提供（IT/安全 + 慧应用项目组：杨赫/白雪/尹大为/于广交）
+    # APIKEY：招商云 PAAS 订阅时获取
+    api-key: ${LIAOGONG_API_KEY:demo-api-key-mock}
+    # 招商云 PAAS 基础地址
+    paas-base-url: ${LIAOGONG_PAAS_BASE_URL:https://appstore.cmft.com/paas-market}
+    # 端点路径
+    endpoint: /api/v1/system/getUserInfoByCode
+    # OQ-21 codeVerifier sessionStorage 缓存过期时间（秒）
+    code-verifier-ttl-seconds: 300
+    # 本地 JWT 密钥（生产环境必须替换为强随机）
+    jwt-secret: ${LIAOGONG_JWT_SECRET:default-jwt-secret-please-change-in-production-32bytes-min}
+    # 本地 JWT 有效期（秒）
+    jwt-ttl-seconds: 3600
+    # OQ-23 mock 模式（Q-I2 未提供时返回 mock 用户信息）
+    mock-mode: ${LIAOGONG_MOCK_MODE:true}
