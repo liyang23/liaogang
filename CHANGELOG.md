@@ -465,3 +465,61 @@
   - **F-45 修复**：测试文件 import 路径 `../../src/utils/...` 错（多一段 `src/`），改 `@/utils/...` 别名（Vite + tsconfig 已配 `@` alias）
   - **F-46 修复**：handlebars.render() 之前去 processVar 导致 6 个测试失败；恢复 render() 三步（each → if → var 替换），markdown-renderer 改为**不调 handlebars**（独立工具，避免 var 被替换丢失），{{var}} 由 inlineMd 加 span 高亮
   - **下个任务**：T210（U6 三栏组装器 UI，依赖 T208 PRM 模板 + T209 Handlebars 渲染）
+- v1.17.12 2026-07-16 10:00:00 liyang: T210 实施 - U6 三栏组装器 UI（Wave 4 完成）
+  - **新建 `frontend/src/api/composer.ts`**：PRM 三栏组装器 API 客户端
+    · 类型定义：PrmTemplate / PrmSection / VarBindings / SelectedKOs / ManualSubItems / ComposerContext / RenderResult
+    · 4 API 调用：listPrmTemplates / getPrmTemplate / renderComposer / estimateTokens
+    · estimateTokens 本地估算（2 chars/token 保守，含中英文混合）
+  - **新建 `frontend/src/components/SectionCard.vue`**：Section 卡片
+    · FIXED（变量赋值型）：content 中 {{var}} 占位 + ⚡绑定变量按钮
+    · DYNAMIC（动态选择型）：KO 选择 + 手动子项编辑器
+    · 绑定状态显示：OQ-16 装配数动态计算
+  - **新建 `frontend/src/components/VariableBindingModal.vue`**：变量绑定弹窗
+    · OQ-16 4 种操作：⚡自动匹配（varKey ↔ PAR.symbol）/ ⊕重选 / ✎当前绑定 / ×解除
+    · 解析 {{var}} 占位符 + 列出 + 选 PAR
+    · 自动匹配 varKey 与 PAR.symbol 一致（不区分大小写）
+  - **替换 `frontend/src/views/prompts/ComposerView.vue`**（占位 → 三栏组装器实际实现）
+    · 顶部：PRM 模板选择栏（el-select + 切换加载）
+    · 中栏：Section 编排列表（SectionCard × N，含变量绑定弹窗触发）
+    · 右栏：实时预览 + 字符数 / token 数 / 装配数（OQ-16 动态）
+    · 渲染：handlebars.render() 替换 {{var}} → markdown-renderer.render() → v-html
+    · mock fallback：后端 API 待 T208+ 实施（用 seed 硬编码数据）
+  - **F-47 修复**：SectionCard defineEmits 用 `var` 关键字作 indexed signature 名称（TypeScript 解析失败）；改为 `k`
+  - **验证**：`vite build` 跑通，320+ modules 编译
+    · ComposerView.js 14.98 kB（gzip 5.97 kB，map 49.10 kB）
+  - **P1 三层防御实际工作**：pre-commit（lint via vite build）+ pre-push（lint via vite build）
+  - **下个任务**：T211（U6 PRP 装配数动态 OQ-16 + 字符数 g(M) + Handlebars 错误检测，依赖 T209 + T210）
+- v1.17.13 2026-07-16 10:30:00 liyang: T211 实施 - PRP 装配数动态 OQ-16 + 字符数 + Handlebars 错误检测（TP-2 完成）
+  - **新建 `prompt/service/TemplateEngine.java`**：服务端 Handlebars 子集（与前端 handlebars.ts 一致）
+    · 3 类语法：{{var}} / {{#each}} / {{#if}}（含 ==/!=/>/</<= 比较运算符）
+    · validateSyntax()：检测 {{#each}} / {{/if}} 数量不匹配（40070 业务异常）
+    · render()：多轮处理（100 轮上限）+ 嵌套属性 + 字符串字面量
+  - **新建 `prompt/service/ComposerRenderService.java`**：PRP 组装渲染
+    · render()：加载模板 + 合并 section content（varBindings 替换 {{var}} + manualSubItems / selectedKOs 替换 {{#each items}}）
+    · computeAssemblyCount()：OQ-16 公式 = selectedKOs.length + varBindings.size + manualSubItems.size
+    · RenderResult：rendered / charCount / tokenCount（2 chars/token 保守估算）/ assemblyCount / sectionCount
+  - **新建 `prompt/controller/ComposerController.java`**：1 REST API 端点
+    · POST /api/composer/render（Body 含 templateId + context{selectedKOs/varBindings/manualSubItems}）
+  - **新建 2 测试文件**：
+    · `TemplateEngineTest.java`（8 测试）：{{var}} / 嵌套属性 / {{#each}} / {{#if}} 真值 / 字符串 == 比较 / 语法错误检测（未闭合 {{#each}} / 未闭合 {{#if}}） / 正常模板不抛
+    · `ComposerRenderTest.java`（5 测试）：空上下文装配数 0 / 全上下文 5+3+1=9 / 只 selectedKOs / 字符数 token 数 / varBindings 替换
+  - **F-48 修复**：`processEach` 用 indexOf 找 {{/each}} 但 `m.appendReplacement` 没消费，导致 `{{/each}}` 残留；改用 `Pattern.compile(...)` + `m.appendReplacement` 一次匹配整段 `{{#each X}}body{{/each}}`
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**54/54 测试通过**
+    · TemplateEngineTest 8/8（← T211 done_signal 满足）
+    · ComposerRenderTest 5/5（← T211 done_signal 满足）
+    · 全部 backend 测试：KmApplicationTests 1 + KoStateMachineTest 11 + KoAuditFlowTest 5 + RoleServiceTest 5 + RoleChangeEffectTest 4 + PrmServiceTest 3 + TemplateEngineTest 8 + ComposerRenderTest 5 + AuditAspectIT 4 + KoControllerIT 8 = 52 backend
+    · 加上 KoControllerIT 包含 8 集成测试 + 之前 4 AuditAspectIT 集成
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **TP-2 全部 11 个 task 实施完成**（T201-T211）—— Sprint 2 后端 + 前端 完整实现
+- v1.17.14 2026-07-16 11:16:00 liyang: F-52 修复 Sidebar.vue 缺 import ref（项目预览发现）
+  - **根因**：Sprint 1 实施 Sidebar.vue 时 `import { computed } from 'vue'` 漏写 ref，但第 67 行用 `ref([...])` 创建响应式数组
+  - **影响**：访问 http://localhost:5173/ 页面空白，console 报
+    `[Vue warn] Unhandled error during execution of setup function`
+    `Sidebar.vue:67 Uncaught (in promise) ReferenceError: ref is not defined`
+  - **修复**：`import { computed, ref } from 'vue'`（加 ref）
+  - **F-49 ~ F-52 系列完整列表**（项目预览发现）：
+    · F-49：dev profile `km_user/devpass` 认证失败（MySQL 实际是 `root/Zcx123456!` per test_env.txt）
+    · F-50：application.yml 默认 `localhost:3306` 连不上本机 Docker MySQL
+    · F-51：Spring Boot 启动时 JPA Hibernate 检测 dialect 失败（项目用 MyBatis-Plus，不需要 JPA）
+    · F-52：Sidebar.vue `ref` 导入遗漏（本次）
+  - **验证**：vite HMR 自动热更新 + curl http://localhost:5173/ 主页正常（`<title>辽港伐谋 KM 平台</title>`）
