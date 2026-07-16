@@ -569,3 +569,17 @@
   - **mock 标记**：所有数据用 V9001 seed 真实值 + 近期活动 mock 10 条（T212+ 接真实 API 替换）
   - **验证**：vite build 跑通（320+ modules，DashboardView CSS 2.73 kB + JS 6.19 kB）
   - **下个 task**：T213 ConflictsView / T214 AuditLogView / T215 DictMgmtView / T216 ProjectMgmtView / T217 PromptsView / T218 SnapshotsView / T219 NotFoundView（7 个占位 view）
+- v1.17.17 2026-07-16 12:30:00 liyang: F-53.2.2 DashboardView 第二批差距修复（V3 视觉完全还原）
+  - **修改 `frontend/src/views/dashboard/DashboardView.vue`** 8 个差距修复：
+    · **布局** el-row + el-col（Element Plus 24 栅格）→ 纯 div + CSS Grid 4 列（V3 原型用 .dashboard-grid grid-template-columns: repeat(3, 1fr) + .stat-grid 4 列）
+    · **外边距** padding 20px → 16px 24px（V3 原型 sidebar 留出）
+    · **.stat-card padding** 12px 16px → 16px（V3 原值）
+    · **.label 字号** 12px → 11px + letter-spacing: 0.04em（V3 原值）
+    · **.value 字号** 26px → 28px + margin: 6px 0 4px（V3 原值）
+    · **.breakdown** 加 border-top: 1px dashed var(--line) + padding-top: 6px + JetBrains Mono 字体（V3 关键虚线分隔）
+    · **left border** 改用 ::before 伪元素（V3 原值，position: absolute + top:0 left:0 width:3px height:100%）
+    · **.dashboard-row** 1:1 布局 → 2fr 1fr 布局（V3 原型 grid-template-columns: 2fr 1fr，项目活动 2 份 + 最近活动 1 份）
+    · **响应式** 1024px 窄屏自动堆叠 1 列
+  - **验证**：
+    · vite build 跑通（CSS 2.73 kB → 4.16 kB，JS 6.07 kB，map 17.10 kB）
+    · F-53 处理链路第二阶段 2/3 完成（theme.scss + KoLibrary + DashboardView 三个 V3 风格 view）

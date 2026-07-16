@@ -28,98 +28,86 @@
       <p class="subtitle">知识对象库总览 · 6 类型 · 5 预置角色 · 4 项目 · 当前会话 ROLE-0001（系统管理员）</p>
     </div>
 
-    <!-- V3 4 个 stat-card 统计 -->
-    <el-row :gutter="16" class="stat-row">
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="label">知识对象总数</div>
-          <div class="value">278</div>
-          <div class="delta">+12 本周</div>
-          <div class="breakdown">CON 19 · RUL 47 · PAR 92 · SCH 41 · PRM 3 · DOC 76</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card success">
-          <div class="label">已生效 KO</div>
-          <div class="value">231</div>
-          <div class="delta">+8 本周</div>
-          <div class="breakdown">占总 KO 83%</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card warn">
-          <div class="label">待处置治理项</div>
-          <div class="value">7</div>
-          <div class="delta down">-2 本周</div>
-          <div class="breakdown">3 冲突 + 4 警告</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card danger">
-          <div class="label">紧急告警</div>
-          <div class="value">1</div>
-          <div class="delta">+1 今日</div>
-          <div class="breakdown">PRM-DRAFT 超时未审</div>
-        </div>
-      </el-col>
-    </el-row>
+    <!-- V3 4 个 stat-card 统计（CSS Grid 4 列，不依赖 Element Plus el-row） -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="label">知识对象总数</div>
+        <div class="value">278</div>
+        <div class="delta">+12 本周</div>
+        <div class="breakdown">CON 19 · RUL 47 · PAR 92 · SCH 41 · PRM 3 · DOC 76</div>
+      </div>
+      <div class="stat-card success">
+        <div class="label">已生效 KO</div>
+        <div class="value">231</div>
+        <div class="delta">+8 本周</div>
+        <div class="breakdown">占总 KO 83%</div>
+      </div>
+      <div class="stat-card warn">
+        <div class="label">待处置治理项</div>
+        <div class="value">7</div>
+        <div class="delta down">-2 本周</div>
+        <div class="breakdown">3 冲突 + 4 警告</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="label">紧急告警</div>
+        <div class="value">1</div>
+        <div class="delta">+1 今日</div>
+        <div class="breakdown">PRM-DRAFT 超时未审</div>
+      </div>
+    </div>
 
-    <!-- 中部：项目活动 + 最近活动 左右分栏 -->
-    <el-row :gutter="16" class="main-row">
+    <!-- V3 dashboard-row 2fr 1fr 布局：项目活动 2 份 + 最近活动 1 份 -->
+    <div class="dashboard-row">
       <!-- 左：4 项目活动（V3 .lst-item） -->
-      <el-col :span="12">
-        <div class="card-section">
-          <h3 class="section-title">项目活动 <span class="section-meta">4 个项目 · 3 活动 · 1 归档</span></h3>
-          <div class="lst-list">
-            <div
-              v-for="project in projects"
-              :key="project.code"
-              class="lst-item"
-              @click="onProjectClick(project.code)"
-            >
-              <div class="lst-item__header">
-                <div class="lst-item__code">{{ project.code }}</div>
-                <div class="lst-item__status" :class="project.statusClass">
-                  {{ project.statusLabel }}
-                </div>
+      <div class="card-section">
+        <h3 class="section-title">项目活动 <span class="section-meta">4 个项目 · 3 活动 · 1 归档</span></h3>
+        <div class="lst-list">
+          <div
+            v-for="project in projects"
+            :key="project.code"
+            class="lst-item"
+            @click="onProjectClick(project.code)"
+          >
+            <div class="lst-item__header">
+              <div class="lst-item__code">{{ project.code }}</div>
+              <div class="lst-item__status" :class="project.statusClass">
+                {{ project.statusLabel }}
               </div>
-              <div class="lst-item__title">{{ project.name }}</div>
-              <div class="lst-item__meta">
-                KO 数 <span class="mono">{{ project.koCount }}</span> · 最后活动
-                <span class="mono">{{ project.lastActivity }}</span>
-              </div>
+            </div>
+            <div class="lst-item__title">{{ project.name }}</div>
+            <div class="lst-item__meta">
+              KO 数 <span class="mono">{{ project.koCount }}</span> · 最后活动
+              <span class="mono">{{ project.lastActivity }}</span>
             </div>
           </div>
         </div>
-      </el-col>
+      </div>
 
       <!-- 右：最近活动（V3 .lst-item） -->
-      <el-col :span="12">
-        <div class="card-section">
-          <h3 class="section-title">最近活动 <span class="section-meta">最近 10 条</span></h3>
-          <div class="lst-list">
-            <div
-              v-for="activity in activities"
-              :key="activity.id"
-              class="lst-item lst-item--activity"
-              @click="onActivityClick(activity.id)"
-            >
-              <div class="lst-item__icon">{{ activity.icon }}</div>
-              <div class="lst-item__body">
-                <div class="lst-item__title">
-                  <span class="mono">{{ activity.action }}</span>
-                  ·
-                  {{ activity.target }}
-                </div>
-                <div class="lst-item__meta">
-                  <span class="mono">{{ activity.user }}</span> · {{ activity.time }}
-                </div>
+      <div class="card-section">
+        <h3 class="section-title">最近活动 <span class="section-meta">最近 10 条</span></h3>
+        <div class="lst-list">
+          <div
+            v-for="activity in activities"
+            :key="activity.id"
+            class="lst-item lst-item--activity"
+            @click="onActivityClick(activity.id)"
+          >
+            <div class="lst-item__icon">{{ activity.icon }}</div>
+            <div class="lst-item__body">
+              <div class="lst-item__title">
+                <span class="mono">{{ activity.action }}</span>
+                ·
+                {{ activity.target }}
+              </div>
+              <div class="lst-item__meta">
+                <span class="mono">{{ activity.user }}</span> · {{ activity.time }}
               </div>
             </div>
           </div>
         </div>
-      </el-col>
-    </el-row>
+      </div>
+    </div>
 
     <!-- 底部：趋势占位（V3 实际用 ASCII art，T212+ 后端数据齐全后接 echarts） -->
     <div class="card-section">
@@ -247,17 +235,91 @@ function onActivityClick(id: number) {
 </script>
 
 <style lang="scss" scoped>
+/* === F-53.2.2 DashboardView V3 完整还原（第二批差距修复） === */
+
 .dashboard {
-  padding: 20px;
+  /* V3: padding: 16px 24px（sidebar 留出） */
+  padding: 16px 24px;
 }
 
-// === V3 视觉还原：继承 src/styles/theme.scss 的 .page-header / .stat-card / .lst-item 工具类 ===
-// 本页只定义 stat-row 间距 + card-section 容器 + 趋势占位 + 状态颜色
+/* === V3 原型 .stat-card 关键还原（不依赖全局 .stat-card 工具类差异） === */
 
-.stat-row { margin-bottom: 16px; }
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;  /* V3 原值 */
+  background: var(--bg-paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
 
-.main-row { margin-bottom: 16px; }
+  /* V3 原型用 ::before 伪元素做 3px left border（更精准） */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--port-blue);
+  }
+  &.success::before { background: var(--signal-green); }
+  &.warn::before { background: var(--signal-orange); }
+  &.danger::before { background: var(--signal-red); }
 
+  .label {
+    font-size: 11px;  /* V3 原值 */
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;  /* V3 原值 */
+  }
+  .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;  /* V3 原值 */
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 6px 0 4px;  /* V3 原值 */
+  }
+  .delta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--signal-green);
+    &.down { color: var(--signal-red); }
+  }
+  .breakdown {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 6px;
+    border-top: 1px dashed var(--line);  /* V3 关键：虚线分隔 */
+    padding-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* V3 dashboard-row 布局：2fr 1fr（项目活动 2 份 + 最近活动 1 份） */
+.dashboard-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  /* 响应式：窄屏自动堆叠 */
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* V3 4 个 stat-card 容器：3 列等宽 grid（不依赖 el-row 栅格） */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* V3 容器（项目活动 / 最近活动 / 趋势） */
 .card-section {
   background: var(--bg-paper);
   border: 1px solid var(--line);
@@ -283,10 +345,11 @@ function onActivityClick(id: number) {
   }
 }
 
+/* V3 项目活动列表（V3 原型用 .lst-item，已继承全局） */
 .lst-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;  /* V3 list 之间用 border-bottom 分隔，无 gap */
 }
 
 // 状态颜色
