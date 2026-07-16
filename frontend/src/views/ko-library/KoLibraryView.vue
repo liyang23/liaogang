@@ -105,10 +105,9 @@
       >
         <div class="type-card-content">
           <div class="type-code">{{ type }}</div>
-            <div class="type-info">
-              <div class="type-name">{{ KO_TYPE_NAMES[type] }}</div>
-              <div class="type-count">{{ TYPE_COUNTS[type] }} 个</div>
-            </div>
+          <div class="type-info">
+            <div class="type-name">{{ KO_TYPE_NAMES[type] }}</div>
+            <div class="type-count">{{ TYPE_COUNTS[type] }} 个</div>
           </div>
         </div>
       </div>

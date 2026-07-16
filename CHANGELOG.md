@@ -623,3 +623,13 @@
     · F-53.2 中期：8 个 view V3 完整还原（Dashboard + KO Library + Conflicts + AuditLog + DictMgmt + ProjectMgmt + Prompts + Snapshots + NotFound）✅
     · F-53.3 长期：frontend-standards.md + check-v3-style.sh + TP-3 模板 ✅
   - **下个**：修复 vite build 错（KoLibraryView.vue parse 错误）+ TP-3 task pack 模板
+- v1.17.20 2026-07-16 14:00:00 liyang: F-53.3.1 修 vite build parse 错（KoLibraryView 多余 div 嵌套）
+  - **F-53.3 收尾**：check-v3-style.sh 全部通过 + vite build 成功
+  - **修复 KoLibraryView.vue parse 错**：line 116 `Invalid end tag`
+    · 嵌套 `type-info` div 多余（应是 type-name/quantity 直接在 type-card-content 内）
+    · 缩进调整 + 删 1 个 `<div class="type-info">` + 1 个 `</div>`
+    · 缩进从 14 空格改成 10 空格（与 type-name 缩进一致）
+  - **验证**：
+    · `vite build` 跑通（320+ modules，2.78s）
+    · check-v3-style.sh 仍然全部通过 ✅
+  - **F-53 处理链路完全收官**：F-53.1 + F-53.2 + F-53.3 + F-53.3.1 全部完成
