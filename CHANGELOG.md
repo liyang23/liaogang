@@ -523,3 +523,32 @@
     · F-51：Spring Boot 启动时 JPA Hibernate 检测 dialect 失败（项目用 MyBatis-Plus，不需要 JPA）
     · F-52：Sidebar.vue `ref` 导入遗漏（本次）
   - **验证**：vite HMR 自动热更新 + curl http://localhost:5173/ 主页正常（`<title>辽港伐谋 KM 平台</title>`）
+- v1.17.15 2026-07-16 11:30:00 liyang: F-53.1 短期视觉还原 - V3 CSS 变量 + KoLibrary V3 风格（处理链路阶段 1/3）
+  - **F-53 彻底修复处理链路启动**（docs/solutions/build-errors/2026-07-16-001-frontend-style-divergence.md 已立 solution）
+  - **修改 `src/styles/theme.scss`**（从 V3 原型提取完整 20+ CSS 变量）：
+    · 主题色：`--port-blue #0F4C75` / `--port-blue-light #1E6A9D`（保留）
+    · 信号色：`--signal-orange #ED8936` / `--signal-red #C53030` / `--signal-green #2F855A` / `--signal-yellow #D69E2E`
+    · 文字色：`--text-primary #1A2332` / `--text-secondary #5A6373` / `--text-tertiary #8A92A0` / `--text-on-dark #E5EAF0` / `--text-on-dark-dim #8FA0B5`
+    · 背景色：`--bg-canvas #F5F6F8` / `--bg-paper #FFFFFF` / `--bg-rail #0F1E2E` / `--bg-rail-active #173552` / `--bg-grid #ECEEF1`
+    · 边框：`--line #DCE0E6` / `--line-strong #B0B7C0` / `--steel #2D3748`
+    · 字体：Noto Sans SC + JetBrains Mono
+    · Element Plus 主色：port-blue 9 档变体（light-3 到 light-9 + dark-2）
+    · **新增 V3 关键 class 工具类**（全局可用，所有 view 可用）：
+      - `.page-header`（深色 h1 + 副标题 + 右侧动作按钮组 + ID 标签）
+      - `.toolbar`（搜索框 + 操作按钮组 + spacer）
+      - `.btn` / `.btn-primary`（V3 风格按钮：圆角 2px + 灰边 + 端口蓝 hover/primary）
+      - `.stat-card`（大数字 + 标签 + delta + 端口蓝 left border + success/warn/danger 变体）
+      - `.lst-item`（紧凑列表项 + 端口蓝 hover + translateX 动效）
+  - **修改 `frontend/src/views/ko-library/KoLibraryView.vue`**（V3 视觉完整还原）：
+    · `.page-header` + 端口蓝 h1 + ID 标签 + 3 个操作按钮（导入 / 下载模版 / 新建 KO，V3 btn-primary 风格）
+    · 4 个 `.stat-card` 统计（KO 总数 278 / 项目数 4 / 待审核 7 / 冲突 0，V9001 seed 数据）
+    · `.toolbar` 跨类搜索框 + 高级筛选按钮
+    · 6 类型入口卡片（V3 风格：border-left: 3px solid var(--port-blue) + translateX hover + JetBrains Mono type-code + 数量统计 TYPE_COUNTS）
+  - **`src/components/Sidebar.vue` 已接近 V3**（之前 Sprint 1 已应用 bg-rail/bg-rail-active/signal-orange active border）：无需大幅改动
+  - **`src/components/TopBar.vue` 已应用 V3**（background: var(--bg-rail) + text-on-dark）：无需改动
+  - **F-53 处理链路 3 阶段**：
+    · F-53.1 短期（本次）：theme.scss + KoLibrary 视觉还原
+    · F-53.2 中期：8 个占位 view T212-T219 实施
+    · F-53.3 长期：TP-3+ task pack 模板 + 视觉验收 checklist
+  - **验证**：`vite build` 跑通（320+ modules）+ 浏览器 HMR 自动更新
+  - **下个任务**：F-53.2 中期 - 实施占位 view T212-T219
