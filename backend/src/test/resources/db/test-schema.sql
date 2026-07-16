@@ -84,3 +84,23 @@ CREATE TABLE IF NOT EXISTS user_role (
     assigned_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS prm_template (
+    id          VARCHAR(50)   NOT NULL,
+    name        VARCHAR(200)  NOT NULL,
+    description TEXT             NULL,
+    version     VARCHAR(20)   NOT NULL DEFAULT 'v1.0.0',
+    created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS prm_section (
+    id            BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    template_id   VARCHAR(50)  NOT NULL,
+    section_index INT          NOT NULL,
+    title         VARCHAR(200) NOT NULL,
+    section_type  VARCHAR(20)  NOT NULL,
+    content       TEXT         NOT NULL,
+    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
