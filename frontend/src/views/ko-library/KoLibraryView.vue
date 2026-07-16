@@ -28,37 +28,29 @@
       <p class="subtitle">6 种类型（CON / RUL / PAR / SCH / PRM / DOC）· 跨类搜索 + 状态机 + 跨项目隔离 · 共 278 个知识对象（V9001 seed）</p>
     </div>
 
-    <!-- 4 个统计卡片（V3 stat-card 风格） -->
-    <el-row :gutter="16" class="stat-row">
-      <el-col :span="6">
-        <div class="stat-card success">
-          <div class="stat-label">KO 总数</div>
-          <div class="stat-value">278</div>
-          <div class="stat-meta">+12 本周新增</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="stat-label">项目数</div>
-          <div class="stat-value">4</div>
-          <div class="stat-meta">3 活动 + 1 归档</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card warn">
-          <div class="stat-label">待审核</div>
-          <div class="stat-value">7</div>
-          <div class="stat-meta">Draft / Review 中</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card danger">
-          <div class="stat-label">冲突项</div>
-          <div class="stat-value">0</div>
-          <div class="stat-meta">所有类型已协调</div>
-        </div>
-      </el-col>
-    </el-row>
+    <!-- V3 4 个 stat-card 统计（CSS Grid 4 列） -->
+    <div class="stat-grid">
+      <div class="stat-card success">
+        <div class="stat-label">KO 总数</div>
+        <div class="stat-value">278</div>
+        <div class="stat-meta">+12 本周新增</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">项目数</div>
+        <div class="stat-value">4</div>
+        <div class="stat-meta">3 活动 + 1 归档</div>
+      </div>
+      <div class="stat-card warn">
+        <div class="stat-label">待审核</div>
+        <div class="stat-value">7</div>
+        <div class="stat-meta">Draft / Review 中</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-label">冲突项</div>
+        <div class="stat-value">0</div>
+        <div class="stat-meta">所有类型已协调</div>
+      </div>
+    </div>
 
     <!-- V3 toolbar：搜索框 + 操作 -->
     <div class="toolbar">
@@ -104,19 +96,23 @@
 
     <!-- 6 类型入口卡片（V3 风格 + 端口蓝 hover） -->
     <h3 class="section-title">6 类型入口（点击进入）</h3>
-    <el-row :gutter="16" class="type-cards">
-      <el-col v-for="type in ALL_KO_TYPES" :key="type" :span="8">
-        <div class="type-card" @click="goTypeList(type)">
-          <div class="type-card-content">
-            <div class="type-code">{{ type }}</div>
+    <div class="type-cards">
+      <div
+        v-for="type in ALL_KO_TYPES"
+        :key="type"
+        class="type-card"
+        @click="goTypeList(type)"
+      >
+        <div class="type-card-content">
+          <div class="type-code">{{ type }}</div>
             <div class="type-info">
               <div class="type-name">{{ KO_TYPE_NAMES[type] }}</div>
               <div class="type-count">{{ TYPE_COUNTS[type] }} 个</div>
             </div>
           </div>
         </div>
-      </el-col>
-    </el-row>
+      </div>
+    </div>
   </div>
 </template>
 

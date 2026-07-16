@@ -183,6 +183,6 @@ function onAssignUsers(userSubs: string[]) {
   align-items: center;
   justify-content: space-between;
 }
-.assign-desc { color: #909399; font-size: 13px; margin: 0; }
-.assign-desc strong { color: #E6A23C; }
+.assign-desc { color: var(--text-tertiary); font-size: 13px; margin: 0; }
+.assign-desc strong { color: var(--signal-orange); }
 </style>

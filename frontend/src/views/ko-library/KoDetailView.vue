@@ -148,9 +148,9 @@ watch(() => props.id, loadDetail)
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
-  background: #f5f7fa;
+  background: var(--bg-canvas);
   padding: 12px 16px;
-  border-radius: 4px;
+  border-radius: 2px;
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-all;

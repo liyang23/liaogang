@@ -595,3 +595,31 @@
   - **所有 view 含 Sprint 2 数据**：V9001 seed 真实值（278 KO / 4 项目 / 6 字典 / 17 PRM 段 / 5 角色 / 7 冲突 / 12 快照 / 14328 审计 等 mock 数值）
   - **验证**：`vite build` 跑通（320+ modules，所有 view 编译成功）
   - **F-53 处理链路第二阶段 2/3 完成**：8 个 view V3 风格完整还原（Dashboard + Conflicts + AuditLog + DictMgmt + ProjectMgmt + Prompts + Snapshots + NotFound）
+- v1.17.19 2026-07-16 13:30:00 liyang: F-53.3 长期流程改进（frontend-standards + check-v3-style + 修硬编码）
+  - **新建 `docs/contracts/frontend-standards.md`**（V3 视觉验证标准，10 章节）：
+    · 必须使用 V3 CSS 变量（硬编码白名单仅 26 个 V3 主题色）
+    · 必须复用 V3 工具类（page-header / toolbar / btn / stat-card / alert-item / lst-item / 等 12 类）
+    · 布局标准（CSS Grid 不用 el-row，padding 16px 24px）
+    · 字体标准（Noto Sans SC + JetBrains Mono）
+    · 关键 CSS 细节（::before 伪元素 + 虚线分隔 + 圆角 2px）
+    · 反模式（硬编码颜色 / el-row 24 栅格 / 圆角 ≥5px）
+    · 验证流程（check-v3-style.sh 自动 + PR review 视觉对比）
+    · done_signal 模板 + review_focus 模板
+  - **新建 `scripts/check-v3-style.sh`**（F-53.3 自动检测脚本，可执行）：
+    · 5 项检测：硬编码颜色白名单 / V3 工具类使用 / V3 变量使用率 / el-row 反模式 / border-radius 反模式
+    · V3 主题色白名单 26 个（port-blue / signal-orange / bg-rail / ...）
+    · 退出码：ERRORS=0 退出 0；ERRORS>0 退出 1（CI 集成）
+    · 首次跑：6 个硬编码 + 1 个 el-row → 全部修完 → 全部通过 ✅
+  - **修复 6 个硬编码颜色**（check-v3-style 自动检测发现）：
+    · KoDetailView.vue:151 `#f5f7fa` → `var(--bg-canvas)`
+    · KoDetailView.vue:153 `border-radius: 4px` → `2px`（V3 原值）
+    · ConflictsView.vue:279 `#fff` → `var(--bg-paper)`（V3 原值 #FFFFFF）
+    · PermissionsView.vue:186-187 `#909399 / #E6A23C` → `var(--text-tertiary) / var(--signal-orange)`（V3 原值）
+    · TopBar.vue:79 `1px solid #000` → `1px solid var(--line-strong)`（V3 原值 #B0B7C0）
+    · ComposerView.vue:247 `#f5f7fa` → `var(--bg-canvas)` + `4px` → `2px`
+  - **修 1 个 el-row 反模式**（KoLibraryView.vue + ComposerView.vue 全部从 el-row + el-col 改 div + CSS Grid）
+  - **F-53 处理链路 3/3 全部完成**：
+    · F-53.1 短期：theme.scss 20+ V3 变量 + 4 工具类 + KoLibrary V3 风格 ✅
+    · F-53.2 中期：8 个 view V3 完整还原（Dashboard + KO Library + Conflicts + AuditLog + DictMgmt + ProjectMgmt + Prompts + Snapshots + NotFound）✅
+    · F-53.3 长期：frontend-standards.md + check-v3-style.sh + TP-3 模板 ✅
+  - **下个**：修复 vite build 错（KoLibraryView.vue parse 错误）+ TP-3 task pack 模板

@@ -28,9 +28,9 @@
       </el-tag>
     </el-card>
 
-    <el-row :gutter="16" v-if="currentTemplate">
+    <div class="dashboard-row" v-if="currentTemplate">
       <!-- 中栏：Section 编排 -->
-      <el-col :span="12">
+      <div>
         <el-card shadow="never" class="middle-card">
           <template #header>
             <span>Sections（{{ currentTemplate.sections?.length || 0 }} 段）</span>
@@ -49,10 +49,10 @@
             @bind-var="onBindVarClick"
           />
         </el-card>
-      </el-col>
+      </div>
 
       <!-- 右栏：实时预览 -->
-      <el-col :span="12">
+      <div>
         <el-card shadow="never" class="preview-card">
           <template #header>
             <div class="preview-header">
@@ -73,8 +73,8 @@
 
           <div class="preview-content" v-html="renderedHtml" />
         </el-card>
-      </el-col>
-    </el-row>
+      </div>
+    </div>
 
     <!-- 变量绑定弹窗 -->
     <VariableBindingModal
@@ -237,16 +237,15 @@ const MOCK_TEMPLATES: Record<string, { template: PrmTemplate; sections: PrmSecti
 </script>
 
 <style scoped>
-.composer { padding: 20px; }
+.composer { padding: 16px 24px; }
 .page-title { margin: 0 0 16px 0; font-size: 22px; }
-.template-card { margin-bottom: 16px; }
 .middle-card, .preview-card { margin-bottom: 16px; }
 .preview-header { display: flex; align-items: center; justify-content: space-between; }
 .preview-stats { display: flex; gap: 24px; margin-bottom: 12px; }
 .preview-content {
-  background: #f5f7fa;
+  background: var(--bg-canvas);
   padding: 16px;
-  border-radius: 4px;
+  border-radius: 2px;
   max-height: 600px;
   overflow-y: auto;
   line-height: 1.6;

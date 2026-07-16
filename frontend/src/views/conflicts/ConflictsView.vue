@@ -276,7 +276,7 @@ function onAutoResolve() {
   height: 18px;
   flex-shrink: 0;
   background: var(--signal-red);
-  color: #fff;
+  color: var(--bg-paper);
   border-radius: 2px;
   display: flex;
   align-items: center;

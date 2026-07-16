@@ -76,7 +76,7 @@ function handleUserCommand(command: string) {
   background: var(--bg-rail);
   color: var(--text-on-dark);
   padding: 0 16px;
-  border-bottom: 1px solid #000;
+  border-bottom: 1px solid var(--line-strong);
 
   &__breadcrumb {
     color: var(--text-on-dark);
