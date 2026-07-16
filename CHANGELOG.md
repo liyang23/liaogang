@@ -306,3 +306,162 @@
   - **验证**：`vite build` 跑通，dist/ 完整生成（合计 320 modules transformed）
     · T203 4 个 view 编译成功（KoLibraryView 2.93KB / KoTypeListView 3.65KB / KoDetailView 4.10KB / api/ko.ts 1.10KB）
   - **后续**：占位 view 实施时按 Sprint 2/3 task 顺序替换（U4→U5→U6→U7→U8→U9）
+- v1.17.6 2026-07-15 22:50:00 liyang: T204 实施 - U4 审核流 + DOC/PRM 豁免（Wave 2 完成）
+  - **新建 `ko/service/KoAuditService.java`**：4 业务方法 + 1 状态查询
+    · `submitForReview`：Draft → Review（业务专家 / 算法工程师提交）
+    · `approve`：Review → Approved（合规审核员通过，OQ-12 自审禁止）
+    · `reject`：Review → Draft（驳回附原因，40031 原因不能为空）
+    · `publish`：Approved → Published → Active（系统管理员发布，自动转 Active，§5.2.1.3）
+    · `getStatus` + `countInFlightVersions`：OQ-12 状态机约束查询
+    · 依赖 KoStateMachine 做状态转换守卫（5 状态 + DOC 豁免 + 类型校验）
+  - **新建 `ko/controller/KoAuditController.java`**：5 REST API 端点
+    · POST /api/ko/{id}/submit（提交审核）
+    · POST /api/ko/{id}/approve（审核通过，OQ-12 自审禁止）
+    · POST /api/ko/{id}/reject（驳回 + reason body）
+    · POST /api/ko/{id}/publish（发布）
+    · GET /api/ko/{id}/status（状态 + in-flight 数）
+    · 跨项目隔离 + 角色校验：T205+ 实施时加 @PreAuthorize（OQ-12 + §4.1.2 权限矩阵）
+  - **新建 `test/.../KoAuditFlowTest.java`**：5 测试覆盖 done_signal
+    · `happyPath`：Draft → Review → Approved → Published → Active（4 状态 + 1 自动）
+    · `docExemption`：DOC 类型 Draft → Active 直接（§5.2.1.4 豁免，验证不可再走 Review）
+    · `selfAuditForbidden`：自己审自己 → BusinessException（OQ-12 自审禁止）
+    · `prmStandardFlow`：PRM 走标准 4 状态（OQ-6，不豁免，验证不可 Draft → Active）
+    · `oq12InFlightLimit`：同 KO in-flight 数量约束（countInFlightVersions 返回 0；T205+ 实施完整版本管理时验证）
+    · `@Transactional` 自动回滚（@Rollback 不需要显式注解）
+  - **F-39 修复**：删除测试文件中错误的 `Rollback` placeholder 字段和冗余 `@Rollback` 注解（`@Transactional` 已自动回滚）
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**29/29 测试通过**（KmApplicationTests 1/1 + KoStateMachineTest 11/11 + KoAuditFlowTest 5/5 + AuditAspectIT 4/4 + KoControllerIT 8/8）
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **下个任务**：T205（U5 数据模型 + 默认矩阵 seed + 角色 CRUD）
+- v1.17.7 2026-07-15 22:50:00 liyang: T205 实施 - U5 数据模型 + 默认矩阵 + 角色 CRUD（Wave 2 完成）
+  - **新建 3 entity**：
+    · RoleEntity（id/code/name/description/isBuiltin/isDeleted）—— 预置 5 角色 + 自定义角色通用
+    · RolePermissionEntity（roleId/menuId/operation/allowed）—— 权限矩阵 cell
+    · UserRoleEntity（userSub/roleId/assignedBy）—— 用户角色关联（OQ-12 下次登录生效）
+  - **新建 3 mapper**（BaseMapper，@MapperScan 已配）：RoleMapper / RolePermissionMapper / UserRoleMapper
+  - **新建 `role/service/DefaultMatrixLoader.java`**：@PostConstruct 启动加载 + 幂等
+    · 读取 `classpath:seed/role-permissions.yaml`（SnakeYAML）
+    · 加载 5 预置角色（如已存在跳过）
+    · 加载 150 cells 权限矩阵（5 角色 × 6 KO 类型 × 5 操作）
+  - **新建 `role/service/RoleService.java`**：list / getByCode / createCustomRole / deleteRole
+    · 预置角色不可删（OQ-20 + v0.32 §4.1.1）
+    · 自定义角色被引用不可删（40052 错误码）
+  - **新建 `role/controller/RoleController.java`**：4 REST API 端点
+    · GET /api/role（列表）/ GET /api/role/{code}（详情）
+    · POST /api/role（创建自定义）
+    · DELETE /api/role/{code}（删除）
+  - **新建 `db/migration/V9003__create_role_tables.sql`**：2 张新表
+    · `role_permission`（5 角色 × 6 KO 类型 × 5 操作 = 150 cells）
+    · `user_role`（多对多关联）
+    · IF NOT EXISTS 幂等 + START TRANSACTION + COMMIT
+    · role 表 V9002 已建（T201 顺带建），V9003 不重复
+  - **新建 `seed/role-permissions.yaml`**：5 角色完整矩阵（SnakeYAML 格式）
+    · ROLE-0001 系统管理员：30 cells（6 KO × 5 op 全部 ✓）
+    · ROLE-0002 合规审核员：12 cells（全 READ + 6 REVIEW）
+    · ROLE-0003 算法工程师：16 cells（5 KO × 3 op + DOC READ）
+    · ROLE-0004 业务专家：12 cells（RUL/PAR READ+CREATE+UPDATE + 其他 READ）
+    · ROLE-0005 只读观察者：6 cells（全 READ）
+  - **新建 `test/.../RoleServiceTest.java`**：5 测试覆盖 done_signal
+    · `builtinRolesSeeded`：5 预置角色自动 seed（ROLE-0001 系统管理员名验证）
+    · `defaultMatrix150Cells`：默认矩阵各角色 cell 数量 > 0
+    · `builtinRoleNotDeletable`：预置角色不可删（40051 错误）
+    · `customRoleCreateDelete`：自定义角色可创建+删除（验证 isDeleted=1）
+    · `referencedRoleNotDeletable`：被引用自定义角色不可删（40052 错误）
+  - **F-40 修复**：`test-schema.sql` 加 `role` 表（H2 test profile 用，V9001 seed 不跑 Flyway，需要 test-schema 完整建表）
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**34/34 测试通过**
+    · KmApplicationTests 1/1 + KoStateMachineTest 11/11 + KoAuditFlowTest 5/5 + RoleServiceTest 5/5（← T205）
+    · AuditAspectIT 4/4 + KoControllerIT 8/8
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **下个任务**：T206（U5 权限矩阵 UI + 角色 CRUD + 用户分配 + 3 秒 Toast 撤销，依赖 T205 + T203 前端基础）
+- v1.17.8 2026-07-15 23:05:00 liyang: T206 实施 - U5 权限矩阵 UI + 3 秒 Toast 撤销（Wave 3 完成）
+  - **新建 `frontend/src/api/role.ts`**：角色 API 客户端
+    · 5 操作枚举（READ/CREATE/UPDATE/DELETE/REVIEW）+ 中文 label
+    · 13 菜单清单（按 3 组：主功能 5 / 治理 4 / 配置 4）
+    · 6 API 调用：listRoles / getRole / createRole / deleteRole / getRolePermissions / saveRolePermissions
+  - **新建 `frontend/src/components/PermissionMatrix.vue`**：13 菜单 × 5 操作 复选框矩阵
+    · 按组排序（主功能 / 治理 / 配置）
+    · el-checkbox + @update 事件（父组件收集 → 批量保存 API）
+  - **新建 `frontend/src/components/RoleAssignmentModal.vue`**：用户角色分配弹窗
+    · 多用户 sub 输入（英文逗号分隔）
+    · OQ-12 提示（角色变更下次登录生效）
+  - **替换 `frontend/src/views/permissions/PermissionsView.vue`**（占位 → 真实实现）：
+    · 5 预置角色 + 自定义角色 tabs（预置带 el-tag 标识）
+    · 权限矩阵嵌入（hasChanges 检测）
+    · 用户角色分配（OQ-12 提示）
+    · 3 秒 Toast 撤销（OQ-5 仅前端 UI 回滚）：保存成功 → 3 秒后 setTimeout 自动回滚 → ElMessage.info 提示
+    · ElMessageBox 切换角色前确认（避免未保存修改丢失）
+  - **验证**：`vite build` 跑通，320+ modules 编译
+    · PermissionsView.js 7.29 kB（gzip 3.62 kB）
+  - **下个任务**：T207（U5 角色变更下次登录生效 OQ-12，依赖 T205 数据模型 + T206 权限矩阵）
+- v1.17.9 2026-07-15 23:30:00 liyang: T207 实施 - OQ-12 角色变更下次登录生效（Wave 3 完成）
+  - **新建 `role/event/RoleChangeEvent.java`**：角色变更事件（ASSIGN/REMOVE/MATRIX_UPDATE 3 类型 + effectiveAt）
+  - **新建 `role/service/RoleChangeAuditService.java`**：监听 RoleChangeEvent 写 USER_ROLE_CHANGE 审计（@EventListener + AuditLogService.recordAsync）
+  - **新建 `role/service/UserRoleService.java`**：assignRole + removeRole（发布事件 + 写 user_role + 业务规则）
+    · 分配幂等（已存在跳过）
+    · 移除验证（不存在抛 40060）
+    · 验证角色存在（40411）
+  - **新建 `test/auth/RoleChangeEffectTest.java`**：4 测试覆盖 OQ-12 + OQ-5
+    · `oldSessionStillUsesOldRole`：签发 ROLE-0003 JWT → 改 ROLE-0005 → 旧 JWT role claim 仍是 ROLE-0003（OQ-12 决策）
+    · `newSessionUsesNewRole`：签发新 ROLE-0005 JWT → 新 JWT role claim 是 ROLE-0005（旧 JWT 不变）
+    · `crossDeviceRevokeImpossible`：反射验证 UserRoleService + JwtAuthFilter 都没有 revoke/cancel/invalidate/expire 方法（OQ-5 决策）
+    · `auditLogTriggered`：TestAuditListener 捕获 RoleChangeEvent 触发次数 ≥ 1
+  - **F-41 修复 1**：`mapper.delete()` 返回 `int`（不是 `Long`），改 `int deleted = ...`
+  - **F-42 修复 2**：`@Component` 嵌套类不被 Spring 自动扫描；改 `@TestConfiguration` + `@Import(TestAuditListenerConfig.class)` 显式注入
+  - **F-43 修复 3**：占位反射断言 `extracting("useRedisMock")` 失败（JwtAuthFilter 无此字段），改反射验证"无 revoke/cancel/invalidate 方法"
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**38/38 测试通过**
+    · KmApplicationTests 1/1 + KoStateMachineTest 11/11 + KoAuditFlowTest 5/5 + RoleServiceTest 5/5
+    · RoleChangeEffectTest 4/4（← T207）+ AuditAspectIT 4/4 + KoControllerIT 8/8
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **下个任务**：T208（U6 PRM 模板数据 + 17 段，依赖 T201 数据模型 + T205 默认矩阵）
+- v1.17.10 2026-07-16 09:00:00 liyang: T208 实施 - U6 PRM 模板数据 + 17 段（Wave 4 启动）
+  - **新建 2 entity**：
+    · PrmTemplateEntity（id/name/description/version/createdAt/updatedAt）—— 3 预置 PRM 模板主表
+    · PrmSectionEntity（id/templateId/sectionIndex/title/sectionType/content）—— 17 段 = 9+3+5
+  - **新建 2 mapper**：PrmTemplateMapper + PrmSectionMapper（含 selectByTemplateId 按 index 排序）
+  - **新建 `db/migration/V9004__create_prm_tables.sql`**：2 张新表
+    · prm_template（id PK = KO-PRM-0001/0002/0003）
+    · prm_section（template_id+section_index 唯一索引，17 段）
+  - **新建 `seed/prm-templates.yaml`**：3 预置 PRM 模板完整内容（SnakeYAML 格式）
+    · KO-PRM-0001 大窑湾统筹优化：9 段（任务背景 / 输入参数 / 硬约束 / 软目标 / KO 库引用 / 算法选择 / 输出格式 / 边界条件 / 人工复核）
+    · KO-PRM-0002 堆场计划优化：3 段（任务背景 / 输入参数 / 优化目标）
+    · KO-PRM-0003 泊位分配算法：5 段（任务背景 / 状态空间 / 动作空间 / 奖励函数 / 训练策略）
+    · Section 类型：FIXED（变量赋值型）/ DYNAMIC（动态选择型，含 {{#each items}} 循环）
+  - **新建 `prompt/service/PrmService.java`**：@PostConstruct 启动加载 + 幂等
+    · loadTemplates：插入 3 预置模板（已存在跳过）
+    · loadSections：插入 17 段（templateId+sectionIndex 唯一键去重）
+    · getTemplate + getSections：查询 API
+    · SnakeYAML 读取 seed 文件
+  - **新建 `prompt/controller/PrmController.java`**：3 REST API 端点
+    · GET /api/prm（列表占位，T208+ 实施）
+    · GET /api/prm/{id}（详情 + sections）
+    · GET /api/prm/{id}/sections（仅 sections）
+  - **新建 `test/prompt/PrmServiceTest.java`**：3 测试覆盖 done_signal
+    · `templatesSeeded`：3 预置 PRM 模板自动 seed（KO-PRM-0001/0002/0003 name/version 非空）
+    · `sectionsCountCorrect`：17 段完整性（9+3+5 = 17）
+    · `sectionContentValid`：每段 content 非空 + section_type 合法（FIXED / DYNAMIC）
+  - **F-44 修复**：`test-schema.sql` 加 `prm_template` + `prm_section` 表（H2 test profile 用，V9004 MySQL DDL 不兼容）
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**41/41 测试通过**
+    · KmApplicationTests 1/1 + KoStateMachineTest 11/11 + KoAuditFlowTest 5/5 + RoleServiceTest 5/5
+    · RoleChangeEffectTest 4/4 + PrmServiceTest 3/3（← T208 done_signal 满足）
+    · AuditAspectIT 4/4 + KoControllerIT 8/8
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **下个任务**：T209（U6 自研 Handlebars 子集 OQ-15 + Markdown 渲染器）
+- v1.17.11 2026-07-16 09:45:00 liyang: T209 实施 - U6 自研 Handlebars 子集 OQ-15 + Markdown 渲染器（Wave 4）
+  - **新建 `frontend/src/utils/handlebars.ts`**：自研 Handlebars 子集（OQ-15 决策：不实现 partials/helpers/sub-expressions/块参数）
+    · 3 类语法：{{var}} 替换 / {{#each items}}...{{/each}} 循环 / {{#if cond}}...{{/if}} 条件
+    · 条件支持：== / != / > / < 5 种比较运算符
+    · 嵌套属性：{{user.name}} 递归访问 + 字符串字面量 ("yes" / 'no') + 数字字面量
+    · {{this.x}} 数组元素引用（each 迭代时上下文 this）
+    · 多轮处理（100 轮上限防无限循环）
+  - **新建 `frontend/src/utils/markdown-renderer.ts`**：自研 Markdown 渲染器（OQ-15 收缩到 PRD §10.5.3 9 类元素）
+    · 块级：H2/H3/H4 标题（##/###/####） + 代码块（```lang ... ```）+ 表格（| col | col | + |---|）+ 列表（- / 1.）+ 引用（>）+ 分隔线（---）
+    · 行内：粗体（**） + 斜体（*） + 行内代码（`）+ 链接（[text](url)）+ 变量高亮（{{var}} → <span class="var-highlight">）
+    · HTML 字符转义（防 XSS）
+    · 多行段落累积 + 引用嵌套
+    · 图片不实现（OQ-15 决策）：![alt](url) 按原样作为段落处理
+  - **新建 2 测试文件**：
+    · `handlebars.test.ts`（13 测试）：{{var}} / 嵌套属性 / 数组 each / 空数组 / 真值条件 / 假值条件 / ==/!=/>/< / 不实现 partials / 缺失变量 / each 内部 var / 混合语法
+    · `markdown-renderer.test.ts`（19 测试）：H2/H3/H4 标题 / 不支持 H1 / 粗体/斜体/行内代码 / 代码块带语言 / 表格 / 无序列表 / 有序列表 / 引用 / 分隔线 / 链接 / {{var}} 高亮 / HTML 转义 / 多行段落 / 图片不实现
+  - **vitest 测试结果**：**32/32 全部通过**（done_signal 要求 18+，实际 32，超 14）
+  - **F-45 修复**：测试文件 import 路径 `../../src/utils/...` 错（多一段 `src/`），改 `@/utils/...` 别名（Vite + tsconfig 已配 `@` alias）
+  - **F-46 修复**：handlebars.render() 之前去 processVar 导致 6 个测试失败；恢复 render() 三步（each → if → var 替换），markdown-renderer 改为**不调 handlebars**（独立工具，避免 var 被替换丢失），{{var}} 由 inlineMd 加 span 高亮
+  - **下个任务**：T210（U6 三栏组装器 UI，依赖 T208 PRM 模板 + T209 Handlebars 渲染）
