@@ -1,0 +1,140 @@
+# 3 预置 PRM 模板（v0.32 §5.2.4）
+# 维度：template × section
+# 共 3 × 段 = 9 + 3 + 5 = 17 段
+# Section 类型：FIXED（变量赋值型）/ DYNAMIC（动态选择型）
+
+templates:
+  - id: KO-PRM-0001
+    name: 大窑湾统筹优化 PRM 模板
+    description: 大窑湾集装箱码头泊位-岸桥-堆场-拖车-空叉统筹调度优化（OQ-1）
+    version: v1.0.0
+    sections:
+      - index: 1
+        title: 任务背景
+        section_type: FIXED
+        content: |
+          你是辽港集团大窑湾集装箱码头的智能调度助手。任务：在给定约束下，输出泊位-岸桥-堆场-拖车-空叉的最优协同调度方案。
+      - index: 2
+        title: 输入参数定义
+        section_type: FIXED
+        content: |
+          已知参数：
+          - 船舶到港时间 {{arrival_time}}（ISO 8601）
+          - 船舶类型 {{vessel_type}}（CONV_FEEDER / CONV_MAIN / ULCS）
+          - 泊位 {{berth_id}}（B01~B20）
+          - 岸桥 {{qc_id}}（QC01~QC40）
+      - index: 3
+        title: 硬约束
+        section_type: FIXED
+        content: |
+          硬约束（不可违反）：
+          1. 即到即靠约束：∀v ∈ Vessels: |t_berth - t_arrive| ≤ tolerance
+          2. 岸桥安全距离：同一贝位相邻岸桥最小间距 30m
+          3. 拖车容量上限：max 5 TEU / 车次
+      - index: 4
+        title: 软目标
+        section_type: FIXED
+        content: |
+          软目标（按优先级）：
+          1. 最小化船舶在港时间
+          2. 最大化岸桥利用率（目标 ≥ 75%）
+          3. 最小化拖车空驶率（目标 ≤ 20%）
+      - index: 5
+        title: 数据来源（KO 库引用）
+        section_type: DYNAMIC
+        content: |
+          数据来源：从 KO 库动态拉取以下内容：
+          {{#each items}}
+          - 约束 {{this.id}}: {{this.title}}
+          {{/each}}
+      - index: 6
+        title: 算法选择
+        section_type: DYNAMIC
+        content: |
+          可用算法（从 KO 库 PAR 类型动态匹配）：
+          {{#each params}}
+          - 参数 {{this.symbol}}: {{this.name}}（范围 {{this.range}}）
+          {{/each}}
+      - index: 7
+        title: 输出格式
+        section_type: FIXED
+        content: |
+          输出格式：JSON，包含字段
+          - vessel_assignments: [{ vessel_id, berth_id, qc_id, start_time, end_time }]
+          - objective_value: 目标函数值
+          - solve_time_ms: 求解耗时
+      - index: 8
+        title: 边界条件与异常处理
+        section_type: FIXED
+        content: |
+          若无可行解：返回 {"status": "INFEASIBLE", "violated_constraints": [...]}
+          若部分可行：返回 {"status": "PARTIAL", "unscheduled_vessels": [...]}
+      - index: 9
+        title: 人工复核要求
+        section_type: FIXED
+        content: |
+          所有输出必须经人工复核（系统管理员 + 合规审核员）后方可执行。
+          复核重点：硬约束是否被违反 / 软目标偏差是否在容忍范围内。
+
+  - id: KO-PRM-0002
+    name: 堆场计划优化 PRM 模板
+    description: 进口堆场箱区分配与翻箱率优化算法
+    version: v1.0.0
+    sections:
+      - index: 1
+        title: 任务背景
+        section_type: FIXED
+        content: |
+          你是堆场计划优化助手。任务：为进口集装箱分配箱区，最小化翻箱率。
+      - index: 2
+        title: 输入参数
+        section_type: FIXED
+        content: |
+          输入：进口箱列表 {{containers}}（含箱号、尺寸、重量、目的港）
+          堆场容量 {{yard_capacity_teu}}（TEU）
+      - index: 3
+        title: 优化目标
+        section_type: FIXED
+        content: |
+          目标：最小化翻箱率（目标 ≤ 8%）
+          约束：相同目的港同贝位 / 危险品单独堆放
+
+  - id: KO-PRM-0003
+    name: 泊位分配算法 PRM 模板
+    description: 基于深度强化学习的动态泊位分配算法研发
+    version: v1.0.0
+    sections:
+      - index: 1
+        title: 任务背景
+        section_type: FIXED
+        content: |
+          你是动态泊位分配算法研发助手。任务：基于 DRL 设计泊位分配策略。
+      - index: 2
+        title: 状态空间
+        section_type: DYNAMIC
+        content: |
+          状态空间：{ 泊位占用率, 船舶队列长度, 潮汐状态, 拖车排队 }
+          {{#each state_vars}}
+          - {{this.name}}: {{this.range}}
+          {{/each}}
+      - index: 3
+        title: 动作空间
+        section_type: DYNAMIC
+        content: |
+          动作：分配船舶到泊位
+          {{#each actions}}
+          - 动作 {{this.id}}: {{this.description}}
+          {{/each}}
+      - index: 4
+        title: 奖励函数
+        section_type: FIXED
+        content: |
+          奖励 r = α × (-平均等待时间) + β × (+泊位利用率) + γ × (-碰撞风险)
+          α=0.5 / β=0.3 / γ=0.2
+      - index: 5
+        title: 训练策略
+        section_type: FIXED
+        content: |
+          算法：PPO（Proximal Policy Optimization）
+          训练：1000 episodes / 100k steps
+          评估：测试集 100 艘船，平均等待时间 < 2h

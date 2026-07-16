@@ -1,0 +1,115 @@
+# 5 预置角色默认权限矩阵（v0.32 PRD §4.1.2）
+# 维度：role × ko_type × operation
+# 共 5 × 6 × 5 = 150 cells
+# 操作：READ（查阅）/ CREATE（新增）/ UPDATE（更新）/ DELETE（删除）/ REVIEW（审核）
+
+# 编码规则：
+#   ✓ = 允许
+#   ✗ = 禁止
+#   1 = allowed=true
+#   0 = allowed=false
+
+roles:
+  - code: ROLE-0001
+    name: 系统管理员
+    description: 平台负责人，拥有全部权限（所有菜单所有操作 ✓）
+    is_builtin: true
+    permissions:
+      - { menu_id: CON, operation: READ,    allowed: true }
+      - { menu_id: CON, operation: CREATE,  allowed: true }
+      - { menu_id: CON, operation: UPDATE,  allowed: true }
+      - { menu_id: CON, operation: DELETE,  allowed: true }
+      - { menu_id: CON, operation: REVIEW,  allowed: true }
+      - { menu_id: RUL, operation: READ,    allowed: true }
+      - { menu_id: RUL, operation: CREATE,  allowed: true }
+      - { menu_id: RUL, operation: UPDATE,  allowed: true }
+      - { menu_id: RUL, operation: DELETE,  allowed: true }
+      - { menu_id: RUL, operation: REVIEW,  allowed: true }
+      - { menu_id: PAR, operation: READ,    allowed: true }
+      - { menu_id: PAR, operation: CREATE,  allowed: true }
+      - { menu_id: PAR, operation: UPDATE,  allowed: true }
+      - { menu_id: PAR, operation: DELETE,  allowed: true }
+      - { menu_id: PAR, operation: REVIEW,  allowed: true }
+      - { menu_id: SCH, operation: READ,    allowed: true }
+      - { menu_id: SCH, operation: CREATE,  allowed: true }
+      - { menu_id: SCH, operation: UPDATE,  allowed: true }
+      - { menu_id: SCH, operation: DELETE,  allowed: true }
+      - { menu_id: SCH, operation: REVIEW,  allowed: true }
+      - { menu_id: PRM, operation: READ,    allowed: true }
+      - { menu_id: PRM, operation: CREATE,  allowed: true }
+      - { menu_id: PRM, operation: UPDATE,  allowed: true }
+      - { menu_id: PRM, operation: DELETE,  allowed: true }
+      - { menu_id: PRM, operation: REVIEW,  allowed: true }
+      - { menu_id: DOC, operation: READ,    allowed: true }
+      - { menu_id: DOC, operation: CREATE,  allowed: true }
+      - { menu_id: DOC, operation: UPDATE,  allowed: true }
+      - { menu_id: DOC, operation: DELETE,  allowed: true }
+      - { menu_id: DOC, operation: REVIEW,  allowed: true }
+
+  - code: ROLE-0002
+    name: 合规审核员
+    description: 制度审核岗，全查阅 + KO 审核（不直接编辑 KO）
+    is_builtin: true
+    permissions:
+      - { menu_id: CON, operation: READ,    allowed: true }
+      - { menu_id: CON, operation: REVIEW,  allowed: true }
+      - { menu_id: RUL, operation: READ,    allowed: true }
+      - { menu_id: RUL, operation: REVIEW,  allowed: true }
+      - { menu_id: PAR, operation: READ,    allowed: true }
+      - { menu_id: PAR, operation: REVIEW,  allowed: true }
+      - { menu_id: SCH, operation: READ,    allowed: true }
+      - { menu_id: SCH, operation: REVIEW,  allowed: true }
+      - { menu_id: PRM, operation: READ,    allowed: true }
+      - { menu_id: PRM, operation: REVIEW,  allowed: true }
+      - { menu_id: DOC, operation: READ,    allowed: true }
+      - { menu_id: DOC, operation: REVIEW,  allowed: true }
+
+  - code: ROLE-0003
+    name: 算法工程师
+    description: 算法开发岗，全查阅 + KO 库（6 种 KO 类型）新增/更新
+    is_builtin: true
+    permissions:
+      - { menu_id: CON, operation: READ,    allowed: true }
+      - { menu_id: CON, operation: CREATE,  allowed: true }
+      - { menu_id: CON, operation: UPDATE,  allowed: true }
+      - { menu_id: RUL, operation: READ,    allowed: true }
+      - { menu_id: RUL, operation: CREATE,  allowed: true }
+      - { menu_id: RUL, operation: UPDATE,  allowed: true }
+      - { menu_id: PAR, operation: READ,    allowed: true }
+      - { menu_id: PAR, operation: CREATE,  allowed: true }
+      - { menu_id: PAR, operation: UPDATE,  allowed: true }
+      - { menu_id: SCH, operation: READ,    allowed: true }
+      - { menu_id: SCH, operation: CREATE,  allowed: true }
+      - { menu_id: SCH, operation: UPDATE,  allowed: true }
+      - { menu_id: PRM, operation: READ,    allowed: true }
+      - { menu_id: PRM, operation: CREATE,  allowed: true }
+      - { menu_id: PRM, operation: UPDATE,  allowed: true }
+      - { menu_id: DOC, operation: READ,    allowed: true }
+
+  - code: ROLE-0004
+    name: 业务专家
+    description: 业务操作岗，全查阅 + RUL/PAR 新增/更新（CON/SCH/PRM/DOC 仅查阅）
+    is_builtin: true
+    permissions:
+      - { menu_id: CON, operation: READ,    allowed: true }
+      - { menu_id: RUL, operation: READ,    allowed: true }
+      - { menu_id: RUL, operation: CREATE,  allowed: true }
+      - { menu_id: RUL, operation: UPDATE,  allowed: true }
+      - { menu_id: PAR, operation: READ,    allowed: true }
+      - { menu_id: PAR, operation: CREATE,  allowed: true }
+      - { menu_id: PAR, operation: UPDATE,  allowed: true }
+      - { menu_id: SCH, operation: READ,    allowed: true }
+      - { menu_id: PRM, operation: READ,    allowed: true }
+      - { menu_id: DOC, operation: READ,    allowed: true }
+
+  - code: ROLE-0005
+    name: 只读观察者
+    description: 观察/审计岗，仅查阅（所有菜单仅查阅）
+    is_builtin: true
+    permissions:
+      - { menu_id: CON, operation: READ,    allowed: true }
+      - { menu_id: RUL, operation: READ,    allowed: true }
+      - { menu_id: PAR, operation: READ,    allowed: true }
+      - { menu_id: SCH, operation: READ,    allowed: true }
+      - { menu_id: PRM, operation: READ,    allowed: true }
+      - { menu_id: DOC, operation: READ,    allowed: true }

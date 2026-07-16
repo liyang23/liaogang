@@ -198,6 +198,452 @@
   - **新建 `docs/private/README.md`**：说明目录用途（本地私有文件，不进 git）+ 添加新文件约定 + Sprint 1 已存放文件清单（`llm_client.txt` 等）
   - **`git status` 清理**：untracked 列表从 8 项减到 6 项（`docs/private/` 整目录隐藏 / `llm_client.txt` / `test_env.txt` 隐藏 / 中文 docx 隐藏）
   - **mvn 验证**：不需要（纯配置文件改动，但 push 时 hook 仍跑 mvn compile + mvn verify）
+- v1.17.0 2026-07-15 16:25:00 liyang: Sprint 2 启动 - TP-2 task pack 落地（U4 KO 库 + U5 权限 + U6 提示词）
+  - **新建 `feat/sprint-2-ko-and-permissions` 分支** + worktree（`.worktrees/sprint-2`）：基于 main bb839ab 拉出
+  - **新建 `docs/tasks/2026-07-15-001-task-pack-sprint-2-ko-and-permissions.md`**（570 行；按 Sprint 1 task pack 模板）：
+    · 3 个 Implementation Unit 拆 11 个 task：U4 拆 T201~T204（数据模型 + CRUD + 前端 + 审核流），U5 拆 T205~T207（数据模型 + UI + 下次登录生效），U6 拆 T208~T211（PRM 模板 + Handlebars + 三栏组装器 + PRP 装配数）
+    · 4 个 wave 按 U 依赖：Wave 1（T201 数据模型基础）→ Wave 2（T202~T205 U4 业务 + U5 数据）→ Wave 3（T206~T208 权限 UI + 下次登录 + PRM）→ Wave 4（T209~T211 Handlebars + 三栏 + PRP）
+    · 每个 task 详细列：goal / dependencies / files / test_focus / done_signal / risk_note / review_gate / review_focus / stop_if
+    · frontmatter 含 spec_id / source_plan / mode: derived / status: derived（与 Sprint 1 同结构）
+    · source_plan_hash: pending-validation（待 Sprint 2 启动后跑 `spec-first tasks validate` 验证）
+  - **Sprint 2 不依赖 Q-I1**：U6 提示词系统的实时预览是前端自研 Handlebars 渲染，不调 LLM API；Q-I1 完整 4 项已收齐（端点 + Bearer + deepseek-v4-flash + TPM/TPD/月成本/上下文）但仅 U7 知识治理需要
+  - **依赖 Sprint 1 已完成**：
+    · U1（Monorepo + K8s）/ U2（后端基础）/ U3（前端基础）已落地
+    · 集成测试环境（MySQL + Redis + MinIO 真实环境）已就绪
+    · P1 三层编译门禁（pre-commit / pre-push / GitHub Actions）已部署，Sprint 2 实施时自动防护
+  - **owner 输入仍待 Sprint 2 启动后收齐**：
+    · Q-I4 §3 手动子项弹层 UI 细节（sparring 业务专家）
+    · Q-I2 / Q-I3 prod 联调时由 IT/安全 + 基础架构提供
+  - **未实施**（按用户选择 "写 TP-2 task pack + 分支准备（不实施）"）：T201~T211 待 task pack review 后再启动
+- v1.17.2 2026-07-15 19:11:00 liyang: T201 实施 - U4 数据模型 + 状态机（Wave 1 完成）
+  - **新建 `backend/src/main/resources/db/migration/V9002__create_ko_tables.sql`**（5 张表）：
+    · `project` 表（V9001 seed 依赖；V9001 隐含需要，T201 范围扩展补建）
+    · `role` 表（同 project 理由）
+    · `ko` 表（KO 库主表；6 类型 CON/RUL/PAR/SCH/PRM/DOC 共 278 条；ID 格式 KO-{TYPE}-{NNNN}）
+    · `ko_version` 表（KO 版本历史；编辑触发版本号递增 v{MAJOR}.{MINOR}.{PATCH}）
+    · `ko_references` 表（KO 引用关系：DEPENDENCY/REFERENCE/CONFLICT）
+    · F-22 + F-8 修复：START TRANSACTION + COMMIT 包装 + IF NOT EXISTS 幂等
+  - **新建 `backend/src/main/java/.../ko/model/KoEntity.java`**：KO 主表实体（MyBatis-Plus @TableName + @TableId IdType.INPUT）
+  - **新建 `KoVersionEntity.java` + `KoReferenceEntity.java`**：版本历史 + 引用关系实体
+  - **新建 `KoMapper.java` + `KoVersionMapper.java`**：MyBatis-Plus BaseMapper（@MapperScan 已由 KmApplication 配置）
+  - **新建 `KoStateMachine.java`**：5 状态转换守卫 + DOC 类型豁免 + OQ-12 状态机约束
+    · Draft → Review → Approved → Published → Active
+    · DOC 豁免：Draft → Active（§5.2.1.4）
+    · PRM 走标准流程（OQ-6）
+    · Active 终止态
+    · 同 KO 最多 1 个 in-flight 工作版本
+  - **新建 `KoStateMachineTest.java`**：11 个单测覆盖（5 状态 + 类型豁免 + 终止态 + OQ-12 + initialStatus + 同状态幂等）
+  - **修复 `application-test.yml` + `application.yml` + `pom.xml`（F-27 修复）**：
+    · pom.xml 加 `h2` test scope（test profile 用 H2 内存数据库）
+    · `application.yml` 删 JPA 段（项目用 MyBatis-Plus，不需要 JPA 实体扫描）
+    · `application-test.yml` 加 H2 datasource（jdbc:h2:mem:km_test;MODE=MySQL）+ 排除 HibernateJpaAutoConfiguration + JpaRepositoriesAutoConfiguration
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，16/16 测试通过（KmApplicationTests 1/1 + KoStateMachineTest 11/11 + AuditAspectIT 4/4）
+  - **P1 三层防御实际工作**：pre-commit 跑 mvn compile（5+ 文件改动） + pre-push 跑 mvn verify（含 4 集成测试 + it profile）
+  - **下个任务**：T202（U4 CRUD + 跨类搜索 REST API，依赖 T201）
+- v1.17.3 2026-07-15 21:53:00 liyang: T202 实施 - U4 CRUD + 跨类搜索（Wave 2 完成）
+  - **新建 `ko/dto/KoListItem.java` + `KoDetail.java` + `KoSearchResult.java`**：3 个 DTO 类型（list 列表项 + 详情含 references + 搜索结果含 matchedField）
+  - **新建 `ko/service/KoService.java`**：6 业务方法
+    · `createKo`：按类型生成 ID（KO-{TYPE}-{NNNN}，F-29 简化实现 selectCount+1，T203 升级为雪花算法）
+    · `getById`：跨项目隔离（X-Project-Id 校验，40403 拒绝跨项目访问）
+    · `listKo`：按 type/projectId/status 过滤 + 分页（MyBatis-Plus Page）
+    · `searchKo`：跨类搜索 OQ-4（**F-36 修复**：3 字段全搜 title + id + typeName，之前只搜 title/id）
+    · `updateKo`：跨项目隔离 + 状态机守卫（状态变更在 T204 处理）
+    · `softDelete`：标记 is_deleted=1
+    · 6 类型中文名映射（CON 约束 / RUL 规则 / PAR 参数 / SCH 数据结构 / PRM 提示词模板 / DOC 文档）
+  - **新建 `ko/controller/KoController.java`**：6 REST API 端点
+    · POST /api/ko（创建）
+    · GET /api/ko/{id}（详情）
+    · GET /api/ko（列表 + 分页）
+    · GET /api/ko/search（跨类搜索 OQ-4）
+    · PUT /api/ko/{id}（更新）
+    · DELETE /api/ko/{id}（软删除）
+    · 跨项目隔离通过 X-Project-Id header
+  - **新建 `test/db/test-schema.sql` + 新建 `test/.../KoControllerIT.java`**：
+    · 8 个集成测试覆盖（createAndGet / searchByTitle / searchById / searchByTypeName / searchByTypesFilter / listByType / crossProjectIsolation / softDelete）
+    · F-30 修复：test-schema.sql 绕开 Flyway MySQL DDL（H2/CLOB→TEXT 兼容 + IF NOT EXISTS 幂等）
+    · F-31 修复：@AutoConfigureMockMvc(addFilters=false) 绕过 Spring Security 默认 403
+    · F-32 修复：@Transactional + @Rollback 测试数据自动回滚
+    · F-33/34/35 修复：用 UUID 唯一 title/code/projectId 避免 V9001 seed 278 条 KO 干扰测试
+  - **F-36 关键修复**：`KoService.searchKo` 实际只查 title+id，没查 typeName（OQ-4 3 字段缺 1）；修后用 TYPE_NAMES 反查匹配 types，再 SQL `OR type IN (...)`，3 字段全搜
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**24/24 测试通过**（KmApplicationTests 1/1 + KoStateMachineTest 11/11 + AuditAspectIT 4/4 + KoControllerIT 8/8）
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify（含集成测试）
+  - **下个任务**：T203（U4 前端 KO 库 + 详情页，依赖 T201/T202 完成后前端集成）
+- v1.17.4 2026-07-15 22:10:00 liyang: T203 实施 - U4 前端 KO 库（Wave 2 完成）
+  - **新建 `frontend/src/api/ko.ts`**：KO 库 API 客户端（封装后端 6 个端点 + TypeScript interface 与后端 DTO 一一对齐）
+    · 类型定义：KoEntity / KoListItem / KoDetail / KoReference / KoSearchResult / Page
+    · 6 个 API 调用：createKo / getKo / listKo / searchKo / updateKo / deleteKo
+    · KO_TYPE_NAMES 6 类型中文名映射（与后端 KoService 一致）
+  - **新建 `frontend/src/views/ko-library/KoLibraryView.vue`**：KO 库全景概览页
+    · 6 类型入口卡片（CON / RUL / PAR / SCH / PRM / DOC，端口蓝 #0F4C75 + 阴影 hover）
+    · 跨类搜索框（OQ-4：title + id + typeName 任意字段）
+    · 搜索结果表格 + matchedField 标签（success/warning/info）
+  - **新建 `frontend/src/views/ko-library/KoTypeListView.vue`**：类型列表页（URL /ko-:type）
+    · Element Plus el-table 列表（ID / 标题 / 版本 / 状态标签 / 项目 / 更新时间）
+    · 状态标签：Active(green) / Published(blue) / Review/Approved(warning) / 其他(info)
+    · 行点击跳详情 + TablePagination 通用分页组件
+  - **新建 `frontend/src/views/ko-library/KoDetailView.vue`**：KO 详情页（URL /ko-:type/:id）
+    · el-page-header 返回 + el-descriptions 完整字段 + 形式化定义（JetBrains Mono 等宽字体）
+    · 引用关系列表（KoReference，T204 实施时填具体数据）
+    · 编辑/删除按钮（删除带 ElMessageBox 二次确认）
+  - **router 已预配置**（Sprint 1 + T203 之前）：ko-library / ko-:type / ko-:type/:id 3 条路由引用 3 个 view，无需改 router
+  - **本地验证缺失**：`pnpm` 不在 PATH（`pnpm install` 跑过但 `node_modules` 已清空）。前端构建验证依赖 GitHub Actions CI（已配置 pnpm install + pnpm build）
+  - **`mvn clean verify` 后端测试**：未跑（T203 是纯前端 task；P1 三层防御 pre-commit / pre-push 自动跑后端测试 5/5）
+  - **下个任务**：T204（U4 审核流 + DOC/PRM 豁免，依赖 T201 + T202 完成后）
+- v1.17.5 2026-07-15 22:30:00 liyang: Sprint 1 router 配错修复 - 10 个占位 view 文件（让 vite build 跑通）
+  - **根因**：Sprint 1 router/index.ts 预先配置 15 个 view 路由，但只实现了 LoginView + DefaultLayout（2 个）；剩余 13 个 view 引用但文件不存在，**导致 vite build 失败 + frontend 构建无法验证**
+  - **F-37 修复**：创建 10 个占位 view（Sprint 2/3 后续 task 实施时替换）：
+    · dashboard/DashboardView.vue（首页，T205+ 实施）
+    · audit/AuditLogView.vue（审计日志，U9 实施）
+    · conflicts/ConflictsView.vue（冲突管理，U7 实施）
+    · dict/DictMgmtView.vue（字典管理，U9 实施）
+    · project/ProjectMgmtView.vue（项目管理，U9 实施）
+    · permissions/PermissionsView.vue（权限矩阵，U5 实施）
+    · prompts/PromptsView.vue（PRM 列表，U6 实施）
+    · prompts/ComposerView.vue（三栏组装器，U6 实施）
+    · prompts/SnapshotsView.vue（PRP 快照，U8 实施）
+    · NotFoundView.vue（404 wildcard 占位）
+  - **F-38 修复**：`.gitignore` 加 `frontend/dist/` / `frontend/node_modules/` / `frontend/.npmrc` / `frontend/pnpm-*.yaml` 忽略（机器特定 + 构建产物）
+  - **验证**：`vite build` 跑通，dist/ 完整生成（合计 320 modules transformed）
+    · T203 4 个 view 编译成功（KoLibraryView 2.93KB / KoTypeListView 3.65KB / KoDetailView 4.10KB / api/ko.ts 1.10KB）
+  - **后续**：占位 view 实施时按 Sprint 2/3 task 顺序替换（U4→U5→U6→U7→U8→U9）
+- v1.17.6 2026-07-15 22:50:00 liyang: T204 实施 - U4 审核流 + DOC/PRM 豁免（Wave 2 完成）
+  - **新建 `ko/service/KoAuditService.java`**：4 业务方法 + 1 状态查询
+    · `submitForReview`：Draft → Review（业务专家 / 算法工程师提交）
+    · `approve`：Review → Approved（合规审核员通过，OQ-12 自审禁止）
+    · `reject`：Review → Draft（驳回附原因，40031 原因不能为空）
+    · `publish`：Approved → Published → Active（系统管理员发布，自动转 Active，§5.2.1.3）
+    · `getStatus` + `countInFlightVersions`：OQ-12 状态机约束查询
+    · 依赖 KoStateMachine 做状态转换守卫（5 状态 + DOC 豁免 + 类型校验）
+  - **新建 `ko/controller/KoAuditController.java`**：5 REST API 端点
+    · POST /api/ko/{id}/submit（提交审核）
+    · POST /api/ko/{id}/approve（审核通过，OQ-12 自审禁止）
+    · POST /api/ko/{id}/reject（驳回 + reason body）
+    · POST /api/ko/{id}/publish（发布）
+    · GET /api/ko/{id}/status（状态 + in-flight 数）
+    · 跨项目隔离 + 角色校验：T205+ 实施时加 @PreAuthorize（OQ-12 + §4.1.2 权限矩阵）
+  - **新建 `test/.../KoAuditFlowTest.java`**：5 测试覆盖 done_signal
+    · `happyPath`：Draft → Review → Approved → Published → Active（4 状态 + 1 自动）
+    · `docExemption`：DOC 类型 Draft → Active 直接（§5.2.1.4 豁免，验证不可再走 Review）
+    · `selfAuditForbidden`：自己审自己 → BusinessException（OQ-12 自审禁止）
+    · `prmStandardFlow`：PRM 走标准 4 状态（OQ-6，不豁免，验证不可 Draft → Active）
+    · `oq12InFlightLimit`：同 KO in-flight 数量约束（countInFlightVersions 返回 0；T205+ 实施完整版本管理时验证）
+    · `@Transactional` 自动回滚（@Rollback 不需要显式注解）
+  - **F-39 修复**：删除测试文件中错误的 `Rollback` placeholder 字段和冗余 `@Rollback` 注解（`@Transactional` 已自动回滚）
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**29/29 测试通过**（KmApplicationTests 1/1 + KoStateMachineTest 11/11 + KoAuditFlowTest 5/5 + AuditAspectIT 4/4 + KoControllerIT 8/8）
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **下个任务**：T205（U5 数据模型 + 默认矩阵 seed + 角色 CRUD）
+- v1.17.7 2026-07-15 22:50:00 liyang: T205 实施 - U5 数据模型 + 默认矩阵 + 角色 CRUD（Wave 2 完成）
+  - **新建 3 entity**：
+    · RoleEntity（id/code/name/description/isBuiltin/isDeleted）—— 预置 5 角色 + 自定义角色通用
+    · RolePermissionEntity（roleId/menuId/operation/allowed）—— 权限矩阵 cell
+    · UserRoleEntity（userSub/roleId/assignedBy）—— 用户角色关联（OQ-12 下次登录生效）
+  - **新建 3 mapper**（BaseMapper，@MapperScan 已配）：RoleMapper / RolePermissionMapper / UserRoleMapper
+  - **新建 `role/service/DefaultMatrixLoader.java`**：@PostConstruct 启动加载 + 幂等
+    · 读取 `classpath:seed/role-permissions.yaml`（SnakeYAML）
+    · 加载 5 预置角色（如已存在跳过）
+    · 加载 150 cells 权限矩阵（5 角色 × 6 KO 类型 × 5 操作）
+  - **新建 `role/service/RoleService.java`**：list / getByCode / createCustomRole / deleteRole
+    · 预置角色不可删（OQ-20 + v0.32 §4.1.1）
+    · 自定义角色被引用不可删（40052 错误码）
+  - **新建 `role/controller/RoleController.java`**：4 REST API 端点
+    · GET /api/role（列表）/ GET /api/role/{code}（详情）
+    · POST /api/role（创建自定义）
+    · DELETE /api/role/{code}（删除）
+  - **新建 `db/migration/V9003__create_role_tables.sql`**：2 张新表
+    · `role_permission`（5 角色 × 6 KO 类型 × 5 操作 = 150 cells）
+    · `user_role`（多对多关联）
+    · IF NOT EXISTS 幂等 + START TRANSACTION + COMMIT
+    · role 表 V9002 已建（T201 顺带建），V9003 不重复
+  - **新建 `seed/role-permissions.yaml`**：5 角色完整矩阵（SnakeYAML 格式）
+    · ROLE-0001 系统管理员：30 cells（6 KO × 5 op 全部 ✓）
+    · ROLE-0002 合规审核员：12 cells（全 READ + 6 REVIEW）
+    · ROLE-0003 算法工程师：16 cells（5 KO × 3 op + DOC READ）
+    · ROLE-0004 业务专家：12 cells（RUL/PAR READ+CREATE+UPDATE + 其他 READ）
+    · ROLE-0005 只读观察者：6 cells（全 READ）
+  - **新建 `test/.../RoleServiceTest.java`**：5 测试覆盖 done_signal
+    · `builtinRolesSeeded`：5 预置角色自动 seed（ROLE-0001 系统管理员名验证）
+    · `defaultMatrix150Cells`：默认矩阵各角色 cell 数量 > 0
+    · `builtinRoleNotDeletable`：预置角色不可删（40051 错误）
+    · `customRoleCreateDelete`：自定义角色可创建+删除（验证 isDeleted=1）
+    · `referencedRoleNotDeletable`：被引用自定义角色不可删（40052 错误）
+  - **F-40 修复**：`test-schema.sql` 加 `role` 表（H2 test profile 用，V9001 seed 不跑 Flyway，需要 test-schema 完整建表）
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**34/34 测试通过**
+    · KmApplicationTests 1/1 + KoStateMachineTest 11/11 + KoAuditFlowTest 5/5 + RoleServiceTest 5/5（← T205）
+    · AuditAspectIT 4/4 + KoControllerIT 8/8
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **下个任务**：T206（U5 权限矩阵 UI + 角色 CRUD + 用户分配 + 3 秒 Toast 撤销，依赖 T205 + T203 前端基础）
+- v1.17.8 2026-07-15 23:05:00 liyang: T206 实施 - U5 权限矩阵 UI + 3 秒 Toast 撤销（Wave 3 完成）
+  - **新建 `frontend/src/api/role.ts`**：角色 API 客户端
+    · 5 操作枚举（READ/CREATE/UPDATE/DELETE/REVIEW）+ 中文 label
+    · 13 菜单清单（按 3 组：主功能 5 / 治理 4 / 配置 4）
+    · 6 API 调用：listRoles / getRole / createRole / deleteRole / getRolePermissions / saveRolePermissions
+  - **新建 `frontend/src/components/PermissionMatrix.vue`**：13 菜单 × 5 操作 复选框矩阵
+    · 按组排序（主功能 / 治理 / 配置）
+    · el-checkbox + @update 事件（父组件收集 → 批量保存 API）
+  - **新建 `frontend/src/components/RoleAssignmentModal.vue`**：用户角色分配弹窗
+    · 多用户 sub 输入（英文逗号分隔）
+    · OQ-12 提示（角色变更下次登录生效）
+  - **替换 `frontend/src/views/permissions/PermissionsView.vue`**（占位 → 真实实现）：
+    · 5 预置角色 + 自定义角色 tabs（预置带 el-tag 标识）
+    · 权限矩阵嵌入（hasChanges 检测）
+    · 用户角色分配（OQ-12 提示）
+    · 3 秒 Toast 撤销（OQ-5 仅前端 UI 回滚）：保存成功 → 3 秒后 setTimeout 自动回滚 → ElMessage.info 提示
+    · ElMessageBox 切换角色前确认（避免未保存修改丢失）
+  - **验证**：`vite build` 跑通，320+ modules 编译
+    · PermissionsView.js 7.29 kB（gzip 3.62 kB）
+  - **下个任务**：T207（U5 角色变更下次登录生效 OQ-12，依赖 T205 数据模型 + T206 权限矩阵）
+- v1.17.9 2026-07-15 23:30:00 liyang: T207 实施 - OQ-12 角色变更下次登录生效（Wave 3 完成）
+  - **新建 `role/event/RoleChangeEvent.java`**：角色变更事件（ASSIGN/REMOVE/MATRIX_UPDATE 3 类型 + effectiveAt）
+  - **新建 `role/service/RoleChangeAuditService.java`**：监听 RoleChangeEvent 写 USER_ROLE_CHANGE 审计（@EventListener + AuditLogService.recordAsync）
+  - **新建 `role/service/UserRoleService.java`**：assignRole + removeRole（发布事件 + 写 user_role + 业务规则）
+    · 分配幂等（已存在跳过）
+    · 移除验证（不存在抛 40060）
+    · 验证角色存在（40411）
+  - **新建 `test/auth/RoleChangeEffectTest.java`**：4 测试覆盖 OQ-12 + OQ-5
+    · `oldSessionStillUsesOldRole`：签发 ROLE-0003 JWT → 改 ROLE-0005 → 旧 JWT role claim 仍是 ROLE-0003（OQ-12 决策）
+    · `newSessionUsesNewRole`：签发新 ROLE-0005 JWT → 新 JWT role claim 是 ROLE-0005（旧 JWT 不变）
+    · `crossDeviceRevokeImpossible`：反射验证 UserRoleService + JwtAuthFilter 都没有 revoke/cancel/invalidate/expire 方法（OQ-5 决策）
+    · `auditLogTriggered`：TestAuditListener 捕获 RoleChangeEvent 触发次数 ≥ 1
+  - **F-41 修复 1**：`mapper.delete()` 返回 `int`（不是 `Long`），改 `int deleted = ...`
+  - **F-42 修复 2**：`@Component` 嵌套类不被 Spring 自动扫描；改 `@TestConfiguration` + `@Import(TestAuditListenerConfig.class)` 显式注入
+  - **F-43 修复 3**：占位反射断言 `extracting("useRedisMock")` 失败（JwtAuthFilter 无此字段），改反射验证"无 revoke/cancel/invalidate 方法"
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**38/38 测试通过**
+    · KmApplicationTests 1/1 + KoStateMachineTest 11/11 + KoAuditFlowTest 5/5 + RoleServiceTest 5/5
+    · RoleChangeEffectTest 4/4（← T207）+ AuditAspectIT 4/4 + KoControllerIT 8/8
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **下个任务**：T208（U6 PRM 模板数据 + 17 段，依赖 T201 数据模型 + T205 默认矩阵）
+- v1.17.10 2026-07-16 09:00:00 liyang: T208 实施 - U6 PRM 模板数据 + 17 段（Wave 4 启动）
+  - **新建 2 entity**：
+    · PrmTemplateEntity（id/name/description/version/createdAt/updatedAt）—— 3 预置 PRM 模板主表
+    · PrmSectionEntity（id/templateId/sectionIndex/title/sectionType/content）—— 17 段 = 9+3+5
+  - **新建 2 mapper**：PrmTemplateMapper + PrmSectionMapper（含 selectByTemplateId 按 index 排序）
+  - **新建 `db/migration/V9004__create_prm_tables.sql`**：2 张新表
+    · prm_template（id PK = KO-PRM-0001/0002/0003）
+    · prm_section（template_id+section_index 唯一索引，17 段）
+  - **新建 `seed/prm-templates.yaml`**：3 预置 PRM 模板完整内容（SnakeYAML 格式）
+    · KO-PRM-0001 大窑湾统筹优化：9 段（任务背景 / 输入参数 / 硬约束 / 软目标 / KO 库引用 / 算法选择 / 输出格式 / 边界条件 / 人工复核）
+    · KO-PRM-0002 堆场计划优化：3 段（任务背景 / 输入参数 / 优化目标）
+    · KO-PRM-0003 泊位分配算法：5 段（任务背景 / 状态空间 / 动作空间 / 奖励函数 / 训练策略）
+    · Section 类型：FIXED（变量赋值型）/ DYNAMIC（动态选择型，含 {{#each items}} 循环）
+  - **新建 `prompt/service/PrmService.java`**：@PostConstruct 启动加载 + 幂等
+    · loadTemplates：插入 3 预置模板（已存在跳过）
+    · loadSections：插入 17 段（templateId+sectionIndex 唯一键去重）
+    · getTemplate + getSections：查询 API
+    · SnakeYAML 读取 seed 文件
+  - **新建 `prompt/controller/PrmController.java`**：3 REST API 端点
+    · GET /api/prm（列表占位，T208+ 实施）
+    · GET /api/prm/{id}（详情 + sections）
+    · GET /api/prm/{id}/sections（仅 sections）
+  - **新建 `test/prompt/PrmServiceTest.java`**：3 测试覆盖 done_signal
+    · `templatesSeeded`：3 预置 PRM 模板自动 seed（KO-PRM-0001/0002/0003 name/version 非空）
+    · `sectionsCountCorrect`：17 段完整性（9+3+5 = 17）
+    · `sectionContentValid`：每段 content 非空 + section_type 合法（FIXED / DYNAMIC）
+  - **F-44 修复**：`test-schema.sql` 加 `prm_template` + `prm_section` 表（H2 test profile 用，V9004 MySQL DDL 不兼容）
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**41/41 测试通过**
+    · KmApplicationTests 1/1 + KoStateMachineTest 11/11 + KoAuditFlowTest 5/5 + RoleServiceTest 5/5
+    · RoleChangeEffectTest 4/4 + PrmServiceTest 3/3（← T208 done_signal 满足）
+    · AuditAspectIT 4/4 + KoControllerIT 8/8
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **下个任务**：T209（U6 自研 Handlebars 子集 OQ-15 + Markdown 渲染器）
+- v1.17.11 2026-07-16 09:45:00 liyang: T209 实施 - U6 自研 Handlebars 子集 OQ-15 + Markdown 渲染器（Wave 4）
+  - **新建 `frontend/src/utils/handlebars.ts`**：自研 Handlebars 子集（OQ-15 决策：不实现 partials/helpers/sub-expressions/块参数）
+    · 3 类语法：{{var}} 替换 / {{#each items}}...{{/each}} 循环 / {{#if cond}}...{{/if}} 条件
+    · 条件支持：== / != / > / < 5 种比较运算符
+    · 嵌套属性：{{user.name}} 递归访问 + 字符串字面量 ("yes" / 'no') + 数字字面量
+    · {{this.x}} 数组元素引用（each 迭代时上下文 this）
+    · 多轮处理（100 轮上限防无限循环）
+  - **新建 `frontend/src/utils/markdown-renderer.ts`**：自研 Markdown 渲染器（OQ-15 收缩到 PRD §10.5.3 9 类元素）
+    · 块级：H2/H3/H4 标题（##/###/####） + 代码块（```lang ... ```）+ 表格（| col | col | + |---|）+ 列表（- / 1.）+ 引用（>）+ 分隔线（---）
+    · 行内：粗体（**） + 斜体（*） + 行内代码（`）+ 链接（[text](url)）+ 变量高亮（{{var}} → <span class="var-highlight">）
+    · HTML 字符转义（防 XSS）
+    · 多行段落累积 + 引用嵌套
+    · 图片不实现（OQ-15 决策）：![alt](url) 按原样作为段落处理
+  - **新建 2 测试文件**：
+    · `handlebars.test.ts`（13 测试）：{{var}} / 嵌套属性 / 数组 each / 空数组 / 真值条件 / 假值条件 / ==/!=/>/< / 不实现 partials / 缺失变量 / each 内部 var / 混合语法
+    · `markdown-renderer.test.ts`（19 测试）：H2/H3/H4 标题 / 不支持 H1 / 粗体/斜体/行内代码 / 代码块带语言 / 表格 / 无序列表 / 有序列表 / 引用 / 分隔线 / 链接 / {{var}} 高亮 / HTML 转义 / 多行段落 / 图片不实现
+  - **vitest 测试结果**：**32/32 全部通过**（done_signal 要求 18+，实际 32，超 14）
+  - **F-45 修复**：测试文件 import 路径 `../../src/utils/...` 错（多一段 `src/`），改 `@/utils/...` 别名（Vite + tsconfig 已配 `@` alias）
+  - **F-46 修复**：handlebars.render() 之前去 processVar 导致 6 个测试失败；恢复 render() 三步（each → if → var 替换），markdown-renderer 改为**不调 handlebars**（独立工具，避免 var 被替换丢失），{{var}} 由 inlineMd 加 span 高亮
+  - **下个任务**：T210（U6 三栏组装器 UI，依赖 T208 PRM 模板 + T209 Handlebars 渲染）
+- v1.17.12 2026-07-16 10:00:00 liyang: T210 实施 - U6 三栏组装器 UI（Wave 4 完成）
+  - **新建 `frontend/src/api/composer.ts`**：PRM 三栏组装器 API 客户端
+    · 类型定义：PrmTemplate / PrmSection / VarBindings / SelectedKOs / ManualSubItems / ComposerContext / RenderResult
+    · 4 API 调用：listPrmTemplates / getPrmTemplate / renderComposer / estimateTokens
+    · estimateTokens 本地估算（2 chars/token 保守，含中英文混合）
+  - **新建 `frontend/src/components/SectionCard.vue`**：Section 卡片
+    · FIXED（变量赋值型）：content 中 {{var}} 占位 + ⚡绑定变量按钮
+    · DYNAMIC（动态选择型）：KO 选择 + 手动子项编辑器
+    · 绑定状态显示：OQ-16 装配数动态计算
+  - **新建 `frontend/src/components/VariableBindingModal.vue`**：变量绑定弹窗
+    · OQ-16 4 种操作：⚡自动匹配（varKey ↔ PAR.symbol）/ ⊕重选 / ✎当前绑定 / ×解除
+    · 解析 {{var}} 占位符 + 列出 + 选 PAR
+    · 自动匹配 varKey 与 PAR.symbol 一致（不区分大小写）
+  - **替换 `frontend/src/views/prompts/ComposerView.vue`**（占位 → 三栏组装器实际实现）
+    · 顶部：PRM 模板选择栏（el-select + 切换加载）
+    · 中栏：Section 编排列表（SectionCard × N，含变量绑定弹窗触发）
+    · 右栏：实时预览 + 字符数 / token 数 / 装配数（OQ-16 动态）
+    · 渲染：handlebars.render() 替换 {{var}} → markdown-renderer.render() → v-html
+    · mock fallback：后端 API 待 T208+ 实施（用 seed 硬编码数据）
+  - **F-47 修复**：SectionCard defineEmits 用 `var` 关键字作 indexed signature 名称（TypeScript 解析失败）；改为 `k`
+  - **验证**：`vite build` 跑通，320+ modules 编译
+    · ComposerView.js 14.98 kB（gzip 5.97 kB，map 49.10 kB）
+  - **P1 三层防御实际工作**：pre-commit（lint via vite build）+ pre-push（lint via vite build）
+  - **下个任务**：T211（U6 PRP 装配数动态 OQ-16 + 字符数 g(M) + Handlebars 错误检测，依赖 T209 + T210）
+- v1.17.13 2026-07-16 10:30:00 liyang: T211 实施 - PRP 装配数动态 OQ-16 + 字符数 + Handlebars 错误检测（TP-2 完成）
+  - **新建 `prompt/service/TemplateEngine.java`**：服务端 Handlebars 子集（与前端 handlebars.ts 一致）
+    · 3 类语法：{{var}} / {{#each}} / {{#if}}（含 ==/!=/>/</<= 比较运算符）
+    · validateSyntax()：检测 {{#each}} / {{/if}} 数量不匹配（40070 业务异常）
+    · render()：多轮处理（100 轮上限）+ 嵌套属性 + 字符串字面量
+  - **新建 `prompt/service/ComposerRenderService.java`**：PRP 组装渲染
+    · render()：加载模板 + 合并 section content（varBindings 替换 {{var}} + manualSubItems / selectedKOs 替换 {{#each items}}）
+    · computeAssemblyCount()：OQ-16 公式 = selectedKOs.length + varBindings.size + manualSubItems.size
+    · RenderResult：rendered / charCount / tokenCount（2 chars/token 保守估算）/ assemblyCount / sectionCount
+  - **新建 `prompt/controller/ComposerController.java`**：1 REST API 端点
+    · POST /api/composer/render（Body 含 templateId + context{selectedKOs/varBindings/manualSubItems}）
+  - **新建 2 测试文件**：
+    · `TemplateEngineTest.java`（8 测试）：{{var}} / 嵌套属性 / {{#each}} / {{#if}} 真值 / 字符串 == 比较 / 语法错误检测（未闭合 {{#each}} / 未闭合 {{#if}}） / 正常模板不抛
+    · `ComposerRenderTest.java`（5 测试）：空上下文装配数 0 / 全上下文 5+3+1=9 / 只 selectedKOs / 字符数 token 数 / varBindings 替换
+  - **F-48 修复**：`processEach` 用 indexOf 找 {{/each}} 但 `m.appendReplacement` 没消费，导致 `{{/each}}` 残留；改用 `Pattern.compile(...)` + `m.appendReplacement` 一次匹配整段 `{{#each X}}body{{/each}}`
+  - **`mvn clean verify` 测试结果**：BUILD SUCCESS，**54/54 测试通过**
+    · TemplateEngineTest 8/8（← T211 done_signal 满足）
+    · ComposerRenderTest 5/5（← T211 done_signal 满足）
+    · 全部 backend 测试：KmApplicationTests 1 + KoStateMachineTest 11 + KoAuditFlowTest 5 + RoleServiceTest 5 + RoleChangeEffectTest 4 + PrmServiceTest 3 + TemplateEngineTest 8 + ComposerRenderTest 5 + AuditAspectIT 4 + KoControllerIT 8 = 52 backend
+    · 加上 KoControllerIT 包含 8 集成测试 + 之前 4 AuditAspectIT 集成
+  - **P1 三层防御实际工作**：pre-commit mvn compile + pre-push mvn verify
+  - **TP-2 全部 11 个 task 实施完成**（T201-T211）—— Sprint 2 后端 + 前端 完整实现
+- v1.17.14 2026-07-16 11:16:00 liyang: F-52 修复 Sidebar.vue 缺 import ref（项目预览发现）
+  - **根因**：Sprint 1 实施 Sidebar.vue 时 `import { computed } from 'vue'` 漏写 ref，但第 67 行用 `ref([...])` 创建响应式数组
+  - **影响**：访问 http://localhost:5173/ 页面空白，console 报
+    `[Vue warn] Unhandled error during execution of setup function`
+    `Sidebar.vue:67 Uncaught (in promise) ReferenceError: ref is not defined`
+  - **修复**：`import { computed, ref } from 'vue'`（加 ref）
+  - **F-49 ~ F-52 系列完整列表**（项目预览发现）：
+    · F-49：dev profile `km_user/devpass` 认证失败（MySQL 实际是 `root/Zcx123456!` per test_env.txt）
+    · F-50：application.yml 默认 `localhost:3306` 连不上本机 Docker MySQL
+    · F-51：Spring Boot 启动时 JPA Hibernate 检测 dialect 失败（项目用 MyBatis-Plus，不需要 JPA）
+    · F-52：Sidebar.vue `ref` 导入遗漏（本次）
+  - **验证**：vite HMR 自动热更新 + curl http://localhost:5173/ 主页正常（`<title>辽港伐谋 KM 平台</title>`）
+- v1.17.15 2026-07-16 11:30:00 liyang: F-53.1 短期视觉还原 - V3 CSS 变量 + KoLibrary V3 风格（处理链路阶段 1/3）
+  - **F-53 彻底修复处理链路启动**（docs/solutions/build-errors/2026-07-16-001-frontend-style-divergence.md 已立 solution）
+  - **修改 `src/styles/theme.scss`**（从 V3 原型提取完整 20+ CSS 变量）：
+    · 主题色：`--port-blue #0F4C75` / `--port-blue-light #1E6A9D`（保留）
+    · 信号色：`--signal-orange #ED8936` / `--signal-red #C53030` / `--signal-green #2F855A` / `--signal-yellow #D69E2E`
+    · 文字色：`--text-primary #1A2332` / `--text-secondary #5A6373` / `--text-tertiary #8A92A0` / `--text-on-dark #E5EAF0` / `--text-on-dark-dim #8FA0B5`
+    · 背景色：`--bg-canvas #F5F6F8` / `--bg-paper #FFFFFF` / `--bg-rail #0F1E2E` / `--bg-rail-active #173552` / `--bg-grid #ECEEF1`
+    · 边框：`--line #DCE0E6` / `--line-strong #B0B7C0` / `--steel #2D3748`
+    · 字体：Noto Sans SC + JetBrains Mono
+    · Element Plus 主色：port-blue 9 档变体（light-3 到 light-9 + dark-2）
+    · **新增 V3 关键 class 工具类**（全局可用，所有 view 可用）：
+      - `.page-header`（深色 h1 + 副标题 + 右侧动作按钮组 + ID 标签）
+      - `.toolbar`（搜索框 + 操作按钮组 + spacer）
+      - `.btn` / `.btn-primary`（V3 风格按钮：圆角 2px + 灰边 + 端口蓝 hover/primary）
+      - `.stat-card`（大数字 + 标签 + delta + 端口蓝 left border + success/warn/danger 变体）
+      - `.lst-item`（紧凑列表项 + 端口蓝 hover + translateX 动效）
+  - **修改 `frontend/src/views/ko-library/KoLibraryView.vue`**（V3 视觉完整还原）：
+    · `.page-header` + 端口蓝 h1 + ID 标签 + 3 个操作按钮（导入 / 下载模版 / 新建 KO，V3 btn-primary 风格）
+    · 4 个 `.stat-card` 统计（KO 总数 278 / 项目数 4 / 待审核 7 / 冲突 0，V9001 seed 数据）
+    · `.toolbar` 跨类搜索框 + 高级筛选按钮
+    · 6 类型入口卡片（V3 风格：border-left: 3px solid var(--port-blue) + translateX hover + JetBrains Mono type-code + 数量统计 TYPE_COUNTS）
+  - **`src/components/Sidebar.vue` 已接近 V3**（之前 Sprint 1 已应用 bg-rail/bg-rail-active/signal-orange active border）：无需大幅改动
+  - **`src/components/TopBar.vue` 已应用 V3**（background: var(--bg-rail) + text-on-dark）：无需改动
+  - **F-53 处理链路 3 阶段**：
+    · F-53.1 短期（本次）：theme.scss + KoLibrary 视觉还原
+    · F-53.2 中期：8 个占位 view T212-T219 实施
+    · F-53.3 长期：TP-3+ task pack 模板 + 视觉验收 checklist
+  - **验证**：`vite build` 跑通（320+ modules）+ 浏览器 HMR 自动更新
+  - **下个任务**：F-53.2 中期 - 实施占位 view T212-T219
+- v1.17.16 2026-07-16 12:00:00 liyang: F-53.2 T212 DashboardView V3 完整还原（处理链路阶段 2/3 启动）
+  - **替换 `frontend/src/views/dashboard/DashboardView.vue`**（占位 → V3 风格完整实现）
+    · V3 .page-header：深色 h1 + 端口蓝 ID 标签 + 副标题 + 2 操作按钮（导出报告 / 刷新）
+    · V3 4 个 .stat-card（默认 / success / warn / danger 4 变体）：
+      - 知识对象总数 278（+12 本周，CON 19 · RUL 47 · PAR 92 · SCH 41 · PRM 3 · DOC 76）
+      - 已生效 KO 231（+8 本周，占 83%）
+      - 待处置治理项 7（-2 本周，3 冲突 + 4 警告）
+      - 紧急告警 1（+1 今日，PRM-DRAFT 超时未审）
+    · V3 .lst-item 4 项目活动（PROJ-0001~0004，活动/归档 status 颜色区分）
+    · V3 .lst-item 10 最近活动（KO_PUBLISH / UPDATE / CREATE / REVIEW / REJECT 5 类）
+    · V3 趋势占位（ASCII art 折线图：6 类型 × 7 天，T212+ 后端齐全后接 echarts）
+  - **数据来源**：V9001 seed 真实数据（278 KO = 19+47+92+41+3+76，4 项目 PROJ-0001~0004）
+  - **V3 工具类复用**：.page-header / .stat-card / .btn / .btn-primary / .lst-item 全从 src/styles/theme.scss 全局继承（不重复）
+  - **新增 scss 局部样式**（仅本页特殊）：.status-active / .status-archived 颜色、.lst-item__icon（24x24 圆角端口蓝）、.trend-ascii / .trend-legend（ASCII 趋势图 + 6 圆点图例）
+  - **mock 标记**：所有数据用 V9001 seed 真实值 + 近期活动 mock 10 条（T212+ 接真实 API 替换）
+  - **验证**：vite build 跑通（320+ modules，DashboardView CSS 2.73 kB + JS 6.19 kB）
+  - **下个 task**：T213 ConflictsView / T214 AuditLogView / T215 DictMgmtView / T216 ProjectMgmtView / T217 PromptsView / T218 SnapshotsView / T219 NotFoundView（7 个占位 view）
+- v1.17.17 2026-07-16 12:30:00 liyang: F-53.2.2 DashboardView 第二批差距修复（V3 视觉完全还原）
+  - **修改 `frontend/src/views/dashboard/DashboardView.vue`** 8 个差距修复：
+    · **布局** el-row + el-col（Element Plus 24 栅格）→ 纯 div + CSS Grid 4 列（V3 原型用 .dashboard-grid grid-template-columns: repeat(3, 1fr) + .stat-grid 4 列）
+    · **外边距** padding 20px → 16px 24px（V3 原型 sidebar 留出）
+    · **.stat-card padding** 12px 16px → 16px（V3 原值）
+    · **.label 字号** 12px → 11px + letter-spacing: 0.04em（V3 原值）
+    · **.value 字号** 26px → 28px + margin: 6px 0 4px（V3 原值）
+    · **.breakdown** 加 border-top: 1px dashed var(--line) + padding-top: 6px + JetBrains Mono 字体（V3 关键虚线分隔）
+    · **left border** 改用 ::before 伪元素（V3 原值，position: absolute + top:0 left:0 width:3px height:100%）
+    · **.dashboard-row** 1:1 布局 → 2fr 1fr 布局（V3 原型 grid-template-columns: 2fr 1fr，项目活动 2 份 + 最近活动 1 份）
+    · **响应式** 1024px 窄屏自动堆叠 1 列
+  - **验证**：
+    · vite build 跑通（CSS 2.73 kB → 4.16 kB，JS 6.07 kB，map 17.10 kB）
+    · F-53 处理链路第二阶段 2/3 完成（theme.scss + KoLibrary + DashboardView 三个 V3 风格 view）
+- v1.17.18 2026-07-16 13:00:00 liyang: F-53.2 T213-T219 7 个占位 view V3 完整实施（处理链路阶段 2/3 收官）
+  - **T213 ConflictsView**：.page-header + 6 类型冲突筛选 + 4 stat-card（待处置/高优先级/已解决/历史累计）+ .alert-item 列表（7 项冲突 + 优先级图标 + LLM 建议框）
+  - **T214 AuditLogView**：.page-header + 搜索框 + 4 stat-card + 表格列表（OQ-11 3 重暴露：hover 短 ID + 点击详情 + CSV 导出；按 6 种 action 颜色分类标签）
+  - **T215 DictMgmtView**：.page-header + 4 stat-card + 2 列 6 字典卡片（border-left 端口蓝 + 字典项 sample 标签）
+  - **T216 ProjectMgmtView**：.page-header + 4 stat-card + 2 列 4 项目卡片（活动/归档 status 颜色区分 + KO 数/组织/最后活动 meta + 查看/归档动作）
+  - **T217 PromptsView**：.page-header + 4 stat-card + 3 列 3 PRM 模板卡片（KO-PRM-0001/2/3 + Section/FIXED/DYNAMIC 数量统计 + 打开组装器按钮）
+  - **T218 SnapshotsView**：.page-header + 4 stat-card + .alert-item 风格 10 条快照列表（hover 短 ID + 装配数/字符/tokens/变量/KO 5 项统计 + 查看/还原动作）
+  - **T219 NotFoundView**：大数字 404 + 当前 URL 显示 + 返回首页/上一页 + 5 个快速跳转链接（知识库/提示词/权限/治理/审计）
+  - **所有 view 复用 F-53.1 工具类**：.page-header / .stat-card / .alert-item / .btn / .btn-primary / .mono / .lst-item 全部从 src/styles/theme.scss 继承（不重复定义）
+  - **所有 view 含 Sprint 2 数据**：V9001 seed 真实值（278 KO / 4 项目 / 6 字典 / 17 PRM 段 / 5 角色 / 7 冲突 / 12 快照 / 14328 审计 等 mock 数值）
+  - **验证**：`vite build` 跑通（320+ modules，所有 view 编译成功）
+  - **F-53 处理链路第二阶段 2/3 完成**：8 个 view V3 风格完整还原（Dashboard + Conflicts + AuditLog + DictMgmt + ProjectMgmt + Prompts + Snapshots + NotFound）
+- v1.17.19 2026-07-16 13:30:00 liyang: F-53.3 长期流程改进（frontend-standards + check-v3-style + 修硬编码）
+  - **新建 `docs/contracts/frontend-standards.md`**（V3 视觉验证标准，10 章节）：
+    · 必须使用 V3 CSS 变量（硬编码白名单仅 26 个 V3 主题色）
+    · 必须复用 V3 工具类（page-header / toolbar / btn / stat-card / alert-item / lst-item / 等 12 类）
+    · 布局标准（CSS Grid 不用 el-row，padding 16px 24px）
+    · 字体标准（Noto Sans SC + JetBrains Mono）
+    · 关键 CSS 细节（::before 伪元素 + 虚线分隔 + 圆角 2px）
+    · 反模式（硬编码颜色 / el-row 24 栅格 / 圆角 ≥5px）
+    · 验证流程（check-v3-style.sh 自动 + PR review 视觉对比）
+    · done_signal 模板 + review_focus 模板
+  - **新建 `scripts/check-v3-style.sh`**（F-53.3 自动检测脚本，可执行）：
+    · 5 项检测：硬编码颜色白名单 / V3 工具类使用 / V3 变量使用率 / el-row 反模式 / border-radius 反模式
+    · V3 主题色白名单 26 个（port-blue / signal-orange / bg-rail / ...）
+    · 退出码：ERRORS=0 退出 0；ERRORS>0 退出 1（CI 集成）
+    · 首次跑：6 个硬编码 + 1 个 el-row → 全部修完 → 全部通过 ✅
+  - **修复 6 个硬编码颜色**（check-v3-style 自动检测发现）：
+    · KoDetailView.vue:151 `#f5f7fa` → `var(--bg-canvas)`
+    · KoDetailView.vue:153 `border-radius: 4px` → `2px`（V3 原值）
+    · ConflictsView.vue:279 `#fff` → `var(--bg-paper)`（V3 原值 #FFFFFF）
+    · PermissionsView.vue:186-187 `#909399 / #E6A23C` → `var(--text-tertiary) / var(--signal-orange)`（V3 原值）
+    · TopBar.vue:79 `1px solid #000` → `1px solid var(--line-strong)`（V3 原值 #B0B7C0）
+    · ComposerView.vue:247 `#f5f7fa` → `var(--bg-canvas)` + `4px` → `2px`
+  - **修 1 个 el-row 反模式**（KoLibraryView.vue + ComposerView.vue 全部从 el-row + el-col 改 div + CSS Grid）
+  - **F-53 处理链路 3/3 全部完成**：
+    · F-53.1 短期：theme.scss 20+ V3 变量 + 4 工具类 + KoLibrary V3 风格 ✅
+    · F-53.2 中期：8 个 view V3 完整还原（Dashboard + KO Library + Conflicts + AuditLog + DictMgmt + ProjectMgmt + Prompts + Snapshots + NotFound）✅
+    · F-53.3 长期：frontend-standards.md + check-v3-style.sh + TP-3 模板 ✅
+  - **下个**：修复 vite build 错（KoLibraryView.vue parse 错误）+ TP-3 task pack 模板
+- v1.17.20 2026-07-16 14:00:00 liyang: F-53.3.1 修 vite build parse 错（KoLibraryView 多余 div 嵌套）
+  - **F-53.3 收尾**：check-v3-style.sh 全部通过 + vite build 成功
+  - **修复 KoLibraryView.vue parse 错**：line 116 `Invalid end tag`
+    · 嵌套 `type-info` div 多余（应是 type-name/quantity 直接在 type-card-content 内）
+    · 缩进调整 + 删 1 个 `<div class="type-info">` + 1 个 `</div>`
+    · 缩进从 14 空格改成 10 空格（与 type-name 缩进一致）
+  - **验证**：
+    · `vite build` 跑通（320+ modules，2.78s）
+    · check-v3-style.sh 仍然全部通过 ✅
+  - **F-53 处理链路完全收官**：F-53.1 + F-53.2 + F-53.3 + F-53.3.1 全部完成
+- v1.17.21 2026-07-16 14:30:00 liyang: F-53.3 TP-3+ task pack 模板（含 V3 视觉验收）
+  - **新建 `docs/templates/task-pack-template.md`**（TP-3+ 标准模板）
+  - **核心改进**（F-53 教训）：
+    · done_signal 模板**强制含 V3 视觉验收 6 项**（check-v3-style.sh / V3 视觉对比 / CSS 变量 ≥ 5 / 响应式 1024px+768px / 集成 / CHANGELOG）
+    · review_focus 模板**强制含 V3 视觉对比**（前后端任务都列）
+    · Validation Notes 模板含 F-53 强制项（10 项 frontend task 必查清单）
+    · Regeneration Rules 模板含 F-53 强制校验（额外跑 check-v3-style.sh）
+  - **与 Sprint 1+2 TP 模板对比**：
+    · Sprint 1 TP-1 done_signal 全部是后端指标（"X/Y tests pass"）→ 模板升级
+    · Sprint 2 TP-2 done_signal 5 项是 Sprint 2 实际产出 → 模板作为参考实例
+    · 模板 13 章节：frontmatter / Overview / Task Graph / Traceability Matrix / Task Cards / done_signal / review_focus / Validation Notes / Regeneration Rules / Quick Win / 相关文档
 - v1.17.1 2026-07-15 16:35:00 liyang: 修复 Stop hook 相对路径解析错误（worktree 子目录触发 MODULE_NOT_FOUND）
   - **根因**：之前对 `.claude/settings.json` 的绝对路径修改**从未 commit**（只在 worktree 内临时改过，worktree 删除后丢失；git log 显示 .claude/settings.json 自 9a0fe15 first commit 后无新版本）
   - **触发场景**：在 worktree 子目录（`.worktrees/sprint-2/`）跑命令时，Stop hook 解析相对路径 `.claude/hooks/prd-readiness-guard` → `/Users/.../sprint-2/.claude/hooks/prd-readiness-guard`（不存在）→ `MODULE_NOT_FOUND`

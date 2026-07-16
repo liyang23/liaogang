@@ -1,28 +1,36 @@
-// 辽港伐谋 KM 平台 Element Plus 主题（v0.32 PRD §10.7.1）
-// 颜色令牌详见 DESIGN.md
+// 辽港伐谋 KM 平台 Element Plus 主题（v0.32 PRD §10.7.1 + 原型 V3 全量 token）
+// 颜色令牌详见 DESIGN.md + /Users/liyang129/data/liaogang/辽港伐谋知识管理平台_原型_V3.html
+// F-53 修复：从 V3 原型提取完整 20+ CSS 变量 + V3 关键 class 工具类
 :root {
-  // 端口蓝主色
+  // ===== 主题色（v0.32 PRD §10.7.1） =====
   --port-blue: #0F4C75;
   --port-blue-light: #1E6A9D;
 
-  // 信号橙强调色
+  // ===== 信号色（v0.32 PRD §10.7.1） =====
   --signal-orange: #ED8936;
   --signal-orange-deep: #C26418;
+  --signal-red: #C53030;
+  --signal-green: #2F855A;
+  --signal-yellow: #D69E2E;
 
-  // 文字色
+  // ===== 文字色 =====
   --text-primary: #1A2332;
   --text-secondary: #5A6373;
   --text-tertiary: #8A92A0;
+  --text-on-dark: #E5EAF0;
+  --text-on-dark-dim: #8FA0B5;
 
-  // 背景
+  // ===== 背景色 =====
   --bg-canvas: #F5F6F8;
   --bg-paper: #FFFFFF;
   --bg-rail: #0F1E2E;
   --bg-rail-active: #173552;
+  --bg-grid: #ECEEF1;
 
-  // 边框
-  --border: #DCE0E6;
-  --border-strong: #B0B7C0;
+  // ===== 边框 =====
+  --line: #DCE0E6;
+  --line-strong: #B0B7C0;
+  --steel: #2D3748;
 }
 
 // 覆盖 Element Plus 主色（端口蓝）
@@ -36,8 +44,8 @@
   --el-color-primary-dark-2: #0B3D60;
 
   --el-color-warning: var(--signal-orange);
-  --el-color-danger: #C53030;
-  --el-color-success: #2F855A;
+  --el-color-danger: var(--signal-red);
+  --el-color-success: var(--signal-green);
 
   // 字体
   --el-font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -60,6 +68,138 @@ html, body, #app {
 // 等宽字体（KO ID / 版本号 / 代码）
 .mono {
   font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+// ===== F-53 V3 关键 class 工具类（参考原型 V3 提取） =====
+
+// 页面顶部（V3 风格：深色文字 + 副标题灰 + 右侧动作按钮组）
+.page-header {
+  margin: 0 0 24px 0;
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+  }
+
+  .right-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+}
+
+// 工具栏（V3 风格：搜索框 + 操作按钮组）
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  .toolbar__spacer { flex: 1; }
+}
+
+// V3 风格按钮（端口蓝 primary + 灰 secondary）
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-paper);
+  color: var(--text-primary);
+  border-radius: 2px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--port-blue);
+    color: var(--port-blue);
+  }
+}
+
+.btn-primary {
+  background: var(--port-blue);
+  color: #fff;
+  border-color: var(--port-blue);
+
+  &:hover {
+    background: var(--port-blue-light);
+    border-color: var(--port-blue-light);
+  }
+}
+
+// 统计卡片（V3 风格：大数字 + 标签 + delta）
+.stat-card {
+  background: var(--bg-paper);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--port-blue);
+  padding: 12px 16px;
+  border-radius: 2px;
+  margin-bottom: 12px;
+
+  &.success { border-left-color: var(--signal-green); }
+  &.warn { border-left-color: var(--signal-orange); }
+  &.danger { border-left-color: var(--signal-red); }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+  }
+
+  .stat-meta {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+  }
+}
+
+// 列表项（V3 风格：紧凑 + 端口蓝 hover）
+.lst-item {
+  background: var(--bg-paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--port-blue);
+    transform: translateX(2px);
+  }
 }
 
 // 路由切换淡入
