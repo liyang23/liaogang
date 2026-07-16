@@ -633,3 +633,14 @@
     · `vite build` 跑通（320+ modules，2.78s）
     · check-v3-style.sh 仍然全部通过 ✅
   - **F-53 处理链路完全收官**：F-53.1 + F-53.2 + F-53.3 + F-53.3.1 全部完成
+- v1.17.21 2026-07-16 14:30:00 liyang: F-53.3 TP-3+ task pack 模板（含 V3 视觉验收）
+  - **新建 `docs/templates/task-pack-template.md`**（TP-3+ 标准模板）
+  - **核心改进**（F-53 教训）：
+    · done_signal 模板**强制含 V3 视觉验收 6 项**（check-v3-style.sh / V3 视觉对比 / CSS 变量 ≥ 5 / 响应式 1024px+768px / 集成 / CHANGELOG）
+    · review_focus 模板**强制含 V3 视觉对比**（前后端任务都列）
+    · Validation Notes 模板含 F-53 强制项（10 项 frontend task 必查清单）
+    · Regeneration Rules 模板含 F-53 强制校验（额外跑 check-v3-style.sh）
+  - **与 Sprint 1+2 TP 模板对比**：
+    · Sprint 1 TP-1 done_signal 全部是后端指标（"X/Y tests pass"）→ 模板升级
+    · Sprint 2 TP-2 done_signal 5 项是 Sprint 2 实际产出 → 模板作为参考实例
+    · 模板 13 章节：frontmatter / Overview / Task Graph / Traceability Matrix / Task Cards / done_signal / review_focus / Validation Notes / Regeneration Rules / Quick Win / 相关文档
