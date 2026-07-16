@@ -552,3 +552,20 @@
     · F-53.3 长期：TP-3+ task pack 模板 + 视觉验收 checklist
   - **验证**：`vite build` 跑通（320+ modules）+ 浏览器 HMR 自动更新
   - **下个任务**：F-53.2 中期 - 实施占位 view T212-T219
+- v1.17.16 2026-07-16 12:00:00 liyang: F-53.2 T212 DashboardView V3 完整还原（处理链路阶段 2/3 启动）
+  - **替换 `frontend/src/views/dashboard/DashboardView.vue`**（占位 → V3 风格完整实现）
+    · V3 .page-header：深色 h1 + 端口蓝 ID 标签 + 副标题 + 2 操作按钮（导出报告 / 刷新）
+    · V3 4 个 .stat-card（默认 / success / warn / danger 4 变体）：
+      - 知识对象总数 278（+12 本周，CON 19 · RUL 47 · PAR 92 · SCH 41 · PRM 3 · DOC 76）
+      - 已生效 KO 231（+8 本周，占 83%）
+      - 待处置治理项 7（-2 本周，3 冲突 + 4 警告）
+      - 紧急告警 1（+1 今日，PRM-DRAFT 超时未审）
+    · V3 .lst-item 4 项目活动（PROJ-0001~0004，活动/归档 status 颜色区分）
+    · V3 .lst-item 10 最近活动（KO_PUBLISH / UPDATE / CREATE / REVIEW / REJECT 5 类）
+    · V3 趋势占位（ASCII art 折线图：6 类型 × 7 天，T212+ 后端齐全后接 echarts）
+  - **数据来源**：V9001 seed 真实数据（278 KO = 19+47+92+41+3+76，4 项目 PROJ-0001~0004）
+  - **V3 工具类复用**：.page-header / .stat-card / .btn / .btn-primary / .lst-item 全从 src/styles/theme.scss 全局继承（不重复）
+  - **新增 scss 局部样式**（仅本页特殊）：.status-active / .status-archived 颜色、.lst-item__icon（24x24 圆角端口蓝）、.trend-ascii / .trend-legend（ASCII 趋势图 + 6 圆点图例）
+  - **mock 标记**：所有数据用 V9001 seed 真实值 + 近期活动 mock 10 条（T212+ 接真实 API 替换）
+  - **验证**：vite build 跑通（320+ modules，DashboardView CSS 2.73 kB + JS 6.19 kB）
+  - **下个 task**：T213 ConflictsView / T214 AuditLogView / T215 DictMgmtView / T216 ProjectMgmtView / T217 PromptsView / T218 SnapshotsView / T219 NotFoundView（7 个占位 view）
