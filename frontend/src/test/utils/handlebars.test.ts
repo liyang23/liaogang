@@ -47,6 +47,14 @@ describe('handlebars 渲染器（T209 OQ-15 自研子集）', () => {
     expect(render('{{#if x != "yes"}}DIFF{{/if}}', { x: 'yes' })).toBe('')
   })
 
+  it('F-54 修复：无空格写法 x==y 与 x == y 等价', () => {
+    expect(render('{{#if x=="yes"}}MATCH{{/if}}', { x: 'yes' })).toBe('MATCH')
+    expect(render('{{#if x=="yes"}}MATCH{{/if}}', { x: 'no' })).toBe('')
+    expect(render('{{#if x=="yes"}}MATCH{{/if}}', { x: 'YES' })).toBe('')
+    expect(render('{{#if x!="yes"}}DIFF{{/if}}', { x: 'no' })).toBe('DIFF')
+    expect(render('{{#if x!="yes"}}DIFF{{/if}}', { x: 'yes' })).toBe('')
+  })
+
   it('{{#if}} 数值比较 > <', () => {
     expect(render('{{#if x > 5}}BIG{{/if}}', { x: 10 })).toBe('BIG')
     expect(render('{{#if x > 5}}BIG{{/if}}', { x: 3 })).toBe('')

@@ -84,28 +84,43 @@ function processIf(template: string, context: RenderContext): string {
 
 /**
  * 评估条件：var / var == value / var != value / var > value / var < value
+ * F-54 修复：支持有/无空格写法（`x==y` 与 `x == y` 等价）
+ * 用 regex 一次性匹配最长优先运算符（<=, >=, ==, !=, <, >），前后允许 0+ 空格
  */
 function evaluateCondition(cond: string, context: RenderContext): boolean {
-  // 解析比较运算符
-  const ops = ['==', '!=', '>=', '<=', '>', '<']
-  for (const op of ops) {
-    const idx = cond.indexOf(` ${op} `)
-    if (idx >= 0) {
-      const left = resolveValue(cond.substring(0, idx).trim(), context)
-      const right = resolveValue(cond.substring(idx + op.length + 2).trim(), context)
-      switch (op) {
-        case '==': return left === right
-        case '!=': return left !== right
-        case '>': return Number(left) > Number(right)
-        case '<': return Number(left) < Number(right)
-        case '>=': return Number(left) >= Number(right)
-        case '<=': return Number(left) <= Number(right)
-      }
+  // 匹配最长优先运算符（每种允许 0+ 空格包围）
+  const opRegex = /(<=|>=|==|!=|<|>)/g;
+  const m = opRegex.exec(cond);
+  if (m) {
+    const op = m[1];
+    const idx = m.index;
+    const left = resolveValue(cond.substring(0, idx).trim(), context);
+    const right = resolveValue(cond.substring(idx + op.length).trim(), context);
+    switch (op) {
+      case '==': return left === right;
+      case '!=': return left !== right;
+      case '>': return toDouble(left) > toDouble(right);
+      case '<': return toDouble(left) < toDouble(right);
+      case '>=': return toDouble(left) >= toDouble(right);
+      case '<=': return toDouble(left) <= toDouble(right);
     }
   }
-  // 简单 truthy 检查
-  const val = resolveValue(cond, context)
-  return Boolean(val) && val !== '' && val !== 'false' && val !== '0'
+  // 无运算符：truthy 检查
+  const val = resolveValue(cond, context);
+  const valStr = val == null ? '' : String(val);
+  return valStr !== '' && valStr !== 'false' && valStr !== '0';
+}
+
+/**
+ * 数字转换（支持 number / string / null）
+ */
+function toDouble(o: unknown): number {
+  if (typeof o === 'number') return o;
+  if (typeof o === 'string') {
+    const n = Number(o);
+    return isNaN(n) ? 0 : n;
+  }
+  return 0;
 }
 
 /**
