@@ -124,13 +124,13 @@ public class ConflictDetector {
         return null;
     }
 
-    /** C6 命名歧义 — 标题/标识符相似度高（编辑距离 < 3） */
+    /** C6 命名歧义 — 标题/标识符相似度高（编辑距离 ≤3） */
     public ConflictEntity detectC6NamingAmbiguity(KoEntity a, KoEntity b) {
         if (a.getTitle() == null || b.getTitle() == null) return null;
         int dist = levenshtein(a.getTitle(), b.getTitle());
-        if (dist > 0 && dist <= 3) {
-            // C6 置信度与编辑距离反比
-            double confidence = Math.max(0.5, 1.0 - dist * 0.15);
+        if (dist <= 3) {
+            // C6 置信度与编辑距离反比 (dist=0 标题相同 -> 0.7; dist=3 -> 0.55)
+            double confidence = Math.max(0.5, 0.7 - dist * 0.05);
             return buildConflict("C6", a.getId(), b.getId(), "title", "title", confidence);
         }
         return null;
