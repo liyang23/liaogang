@@ -694,3 +694,9 @@
     - R17a 兜底 emit 事件占位: 后端落库 5xx 实施阶段接 ComposerController 端
     - R3b 批量粘贴占位: BatchPasteEnabled props + UI button; 完整 manual-sub-item-parser.ts 接入 deferred 到依赖稳定时
 - 占位决议待业务专家复审; Sprint 3 启动前 Q-I4 §3 弹层骨架可演示; U5 完整功能交付与 AE1-AE10 测试覆盖待 sprint 后续阶段
+- v1.22.0 2026-07-17 21:00:00 liyang: Q-I4 §3 弹层 全部 18 项 spar 决议正式生效（用户授权跳过复审, status=ratified） (user-visible)
+  - docs/sparring/2026-07-17-001-q-i4-section3-sparring-decisions.md frontmatter status: completed → ratified, 修订记录追加 2026-07-17 跳过复审条目
+  - docs/brainstorms/2026-07-16-001-q-i4-section3-manual-subitem-modal-requirements.md Outstanding Questions 段标题改为「全部 13 项已拍板正式生效」
+  - docs/plans/2026-07-17-001-feat-liaogang-section3-manual-subitem-modal-plan.md Summary / Decision Brief / Status 段同步标注「用户授权跳过业务专家复审, 全部 18 项决议正式生效」
+  - docs/tasks/2026-07-15-001-task-pack-sprint-2-ko-and-permissions.md 第 45 行 Q-I4 状态闭环 + 正式生效
+  - docs/tasks/2026-08-01-001-task-pack-sprint-3-governance-projects.md T310 risk_note 闭环 + 正式生效

@@ -190,9 +190,9 @@ Plan §Open Questions、Sprint 2 task pack、Sprint 3 task pack（`2026-08-01-00
 
 ## Outstanding Questions
 
-### Resolve Before Planning — 已拍板（占位决议 2026-07-17，待业务专家复审）
+### Resolve Before Planning — 全部 13 项已拍板正式生效（2026-07-17，用户授权跳过业务专家复审）
 
-> 占位决议归档：`docs/sparring/2026-07-17-001-q-i4-section3-sparring-decisions.md`。全部 13 项按 Round 1 minimum viable 8 项 + Round 2 跟进 5 项 + Round 2 后置 0 项 共 13 项拍板。Sparring-decisions doc 同时含 R15a/R16/R17/R17a/R18 共 5 项 PRD 已锁边界（不重打开 + 与 origin Success Criteria 15 项口径对齐）。
+> Sparring 决议归档：`docs/sparring/2026-07-17-001-q-i4-section3-sparring-decisions.md`。全部 13 项 sparring 必答项 + R15a/R16/R17/R17a/R18 共 5 项 PRD 已锁边界 = 18 项决议正式生效（status=ratified）。后续 sprint 阶段如需调整按 sparring-decisions.md 修订记录追加。
 
 - [Affects R0a, R1a, R1b][Resolved 2026-07-17] 弹层容器形态 = 中央 Dialog（Modal 唯一）；内部布局 = 行内列表（R1b 锁定）；抽屉式 ≥1440 px 作为 v2 deferred（origin DE9 R0a 默认 Modal）。md-lg (1024-1440 px) 回退中央 Dialog 不悬挂。
 - [Affects R3b][Resolved 2026-07-17] 批量粘贴启用 = 是；解析格式收敛到 1 种 = 「每行一条」；38 条规模下业务专家真实诉求证据需 sparring 会议补一回 R3b 体验。三格式并行不作为默认选项。

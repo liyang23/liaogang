@@ -16,17 +16,22 @@ implements_schemas: []
 
 ## Summary
 
-为 PRD v0.32 §10.5.1 KO-PRM-0001 §3「计算范围」DYNAMIC 手动子项模式做 §3 弹层落地 + ManualSubItems 类型迁移（`string` → 结构化数组）+ 跨段 `{{var}}` 运行时解析链路 + 校验重复检测。5 个 Implementation Units 按 `Sparring → 前端弹层 → 类型迁移（4 端）→ 跨段变量索引 → 校验重复` 顺序，先用 U1 召集业务专家 sparring 议程锁定 15 项产品决策，再用 U2-U5 实施批次。
+为 PRD v0.32 §10.5.1 KO-PRM-0001 §3「计算范围」DYNAMIC 手动子项模式做 §3 弹层落地 + ManualSubItems 类型迁移（`string` → 结构化数组）+ 跨段 `{{var}}` 运行时解析链路 + 校验重复检测。5 个 Implementation Units 按 `Sparring → 前端弹层 → 类型迁移（4 端）→ 跨段变量索引 → 校验重复` 顺序，先用 U1 召集业务专家 sparring 议程锁定 15 项产品决策，再用 U2-U5 实施批次。**2026-07-17 用户授权跳过业务专家复审 → 全部 18 项决议正式生效（status=ratified, docs/sparring/2026-07-17-001-q-i4-section3-sparring-decisions.md）**。
 
 ## Decision Brief
 
 - **Recommended approach:** 把 §3 弹层拆为 4 组合（容器形态 R0a × 内部布局 R1b 4 路径），通过 ManualSubItemModal.vue / ManualSubItemDrawer.vue 两个 Vue 组件落地；4 端（前端 SectionCard.vue + ComposerView.vue + 后端 ComposerController.parseContext + ComposerRenderService.mergeSectionContext）同步升级 ManualSubItems 类型；R15b 跨段 `{{var}}` 链路贯通 R7/R7a 三锁；R5 阶段 2 不留 plan 暗门。
 - **Key decisions:**
-  - U1 (Sparring) 15 项决策表必须先有产出再实施，否则 U2-U5 的关键设计（容器形态、字段 schema、软硬上下限确切数字）无依据。
+  - U1 (Sparring) 已完成（docs/sparring/...-sparring-decisions.md，15 项决议正式生效）；后续 sprint 阶段如需调整按 sparring-decisions.md 修订记录追加。
   - U3 类型迁移必须四端同步，单端推进会让 R5 阶段 2 失去 OQ-16 重新推导输入。
   - U4 跨段 `{{var}}` 链路依赖 SectionCard.vue DYNAMIC 分支已升级的 ManualSubItems 数组结构（U3）+ U2 弹层视觉一致性基础。
-- **Validation focus:** U2 V3 视觉对比通过 `bash scripts/check-v3-style.sh`；U3 演示值 38 重放测试；U4 §7 解除后 §3 引用断引用视觉信号；U5 R11 AE5 重复检测弹窗二选一覆盖。
-- **Largest risks / boundaries:** SectionCard.vue 当前 textarea 整体替换可能破现有手动子项流（迁移脚本兜底）；后端 `String.replace` 改为逐条拼接可能引入 NPE（integration test 覆盖）；U3 如果 sparring 拍叠加 5 业务字段 schema，类型迁移工作量爆炸，R5 阶段 2 必答「schema 复杂度先评估」。
+- **Validation focus:** U2 V3 视觉对比通过 `bash scripts/check-v3-style.sh`（骨架完成，完整 F-53 V3 视觉对比 deferred 到下一 sprint）；U3 演示值 38 重放测试已落地（ManualSubItemsMigrationTest 5 个测试覆盖）；U4 §7 解除后 §3 引用断引用视觉信号（resolveVarBinding 骨架到位，U4 完整 R15b Plan A）；U5 R11 AE5 重复检测弹窗二选一骨架完成。
+- **Largest risks / boundaries:** SectionCard.vue 当前 textarea 整体替换可能破现有手动子项流（迁移脚本兜底）；后端 `String.replace` 改为逐条拼接可能引入 NPE（integration test 覆盖）；U3 如果 sparring 拍叠加 5 业务字段 schema，类型迁移工作量爆炸，R5 阶段 2 必答「schema 复杂度先评估」（当前占位决议 = title+content 二字段，工作量可控）。
+
+## Status
+
+- **2026-07-17 全部 sparring 决议正式生效**（用户授权跳过业务专家复审；后续如需调整按 sparring-decisions.md 修订记录追加）。
+- **U1-U5 骨架 commit 已完成**（commits c04014a + 63606c8），但 sparring-decisions 已 ratified 后还有 U5 完整 AE 覆盖、R11c 状态机矩阵、R-a11y-baseline、R3b manual-sub-item-parser.ts 等 deferred 项需 sprint 后续 stage 落全。
 
 ---
 

@@ -370,7 +370,7 @@ T314 ─> T316 (U10 测试：DocPreviewServiceTest PDF.js + LibreOffice + Previe
   - 后端：4 个项目 + status 切换
   - **前端：V3 视觉对比 + CSS 变量 + 响应式**
   - 集成：端到端流程
-- **risk_note**: ~~Q-I4 §3 手动子项弹层 UI 细节（sparring 业务专家）~~ **已闭环 2026-07-17**：Q-I4 sparring 议程决议归档 `docs/sparring/2026-07-17-001-q-i4-section3-sparring-decisions.md`；Round 1 minimum viable 8 项 + Round 2 跟进 5 项 + 5 项 PRD 已锁边界全部拍板完成占位决议（待业务专家复审）。Q-I4 是 §3 弹层实施批次（`docs/plans/2026-07-17-001-feat-liaogang-section3-manual-subitem-modal-plan.md`）的事，与 T310 U9 项目管理无技术依赖；T310 启动可推进，但 §3 弹层 U8 快照前置依赖 U3 ManualSubItems 类型迁移完成。
+- **risk_note**: ~~Q-I4 §3 手动子项弹层 UI 细节（sparring 业务专家）~~ **已闭环 + 正式生效 2026-07-17（用户授权跳过复审）**：Q-I4 sparring 议程 18 项决议全部 ratified（`docs/sparring/2026-07-17-001-q-i4-section3-sparring-decisions.md`）。Q-I4 是 §3 弹层实施批次（`docs/plans/2026-07-17-001-feat-liaogang-section3-manual-subitem-modal-plan.md`; commits c04014a + 63606c8）的事，与 T310 U9 项目管理无技术依赖；T310 启动可推进，但 §3 弹层 U8 快照前置依赖 U3 ManualSubItems 类型迁移完成。
 - **stop_if**: 新增项目类型 / status enum 变更
 - **wave**: 1
 
