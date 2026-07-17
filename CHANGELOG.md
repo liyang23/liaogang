@@ -710,3 +710,13 @@
   - T311 prose 显式"3 独立子模块"边界 (SG-6 拆分建议保留为 spec-plan 修订)
   - spec-first tasks validate 重跑: task_pack_validity: valid / deterministic_handoff: true / spec_id: matched / source_plan_hash: matched / task_pack_contract: valid
   - 待 spec-plan 修订阶段处理的 P2/P3 项 (61 项) 保留为 FYI 在 reviewer findings
+- v1.24.0 2026-07-17 22:30:00 liyang: Sprint 3 完整 15/15 task pack 闭环合并到 main (user-visible)
+  - 4 个 Implementation Unit 完整落地: U7 知识治理 + U8 快照 + U9 审计/项目/字典 + U10 文档预览
+  - 15 个 task 全部完成 (T301-T315)
+  - 55 个文件 / 5091 行新增
+  - 88 tests PASS (backend 83 + frontend 5)
+  - 8 个 V9005-V9010 迁移 (U7/U8/U9/U10 全部迁移)
+  - U9 后端 3 子模块 + 9 量纲部署门禁
+  - U10 MinIO + LibreOffice headless 集成
+  - 推 origin/feat/sprint-3-governance-projects + 合并 main (commit cfa2c60)
+  - Sprint 3 4 个 Unit / 15 个 task / 88 tests / 8 migrations 全部交付到 main
