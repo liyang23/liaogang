@@ -1,5 +1,6 @@
 package com.liaogang.famou.km.audit;
 
+import com.liaogang.famou.km.audit.repository.AuditLogMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +21,10 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuditLogService {
+
+    private final AuditLogMapper auditLogMapper;
 
     @Value("${app.audit.partition-by-month:false}")
     private boolean partitionByMonth;
@@ -39,17 +43,28 @@ public class AuditLogService {
     private boolean useRedisMock;
 
     /**
-     * 同步写审计日志
+     * 同步写审计日志 (OQ-5 简化: 6 字段白名单 + 调 auditLogMapper.insert)
+     * 修复 P0 #1: 之前 stub 仅写 slf4j 日志, 不调 mapper.insert; 现修复真实写 audit_log 表
      */
     public void record(AuditLogEntity log) {
-        log.setId(generateId());
+        // OQ-5 简化: 6 字段白名单校验
+        if (log == null) {
+            throw new IllegalArgumentException("AuditLog must not be null");
+        }
+        if (log.getAction() == null || log.getAction().isBlank()) {
+            throw new IllegalArgumentException("AuditLog.action is required (OQ-5)");
+        }
+        if (log.getUserId() == null || log.getUserId().isBlank()) {
+            throw new IllegalArgumentException("AuditLog.userId is required (OQ-5)");
+        }
+        if (log.getId() == null || log.getId().isBlank()) {
+            log.setId(generateId());
+        }
         if (log.getCreatedAt() == null) {
             log.setCreatedAt(LocalDateTime.now());
         }
-        // 实际写入逻辑：本地日志 + 后续接入 ClickHouse / ELK（生产环境）
-        org.slf4j.LoggerFactory.getLogger(AuditLogService.class).info(
-            "AUDIT_LOG: id={}, action={}, userId={}, targetKo={}, detail={}",
-            log.getId(), log.getAction(), log.getUserId(), log.getTargetKo(), log.getDetail());
+        // 实际写入: 调 auditLogMapper.insert() (修复 P0 #1 stub 占位)
+        auditLogMapper.insert(log);
     }
 
     /**
