@@ -40,9 +40,44 @@ export interface VarBindings {
   [sectionIndex: number]: { [varKey: string]: string }
 }
 
-/** 手动子项：sectionIndex → 内容 */
-export interface ManualSubItems {
-  [sectionIndex: number]: string
+/** 手动子项单条结构（Q-I4 §3 弹层 + ManualSubItems 类型迁移落地后形态）*/
+export interface ManualSubItem {
+  title: string
+  content: string
+  value?: number
+  unit?: string
+  lower_bound?: number
+  upper_bound?: number
+  range_type?: string
+}
+
+/** 手动子项：sectionIndex → 内容（U3 完成后统一为 List 形态；U2/U3 过渡期 union 形态）*/
+export type ManualSubItems = {
+  [sectionIndex: number]: string | ManualSubItem[]
+}
+
+/** 把单个手动子项数组扁平化拼接为字符串（U3 完成后可移除该过渡工具）*/
+export function manualSubItemsToString(items: ManualSubItem[]): string {
+  return items.map((it) => `${it.title}\n${it.content}`).join('\n---\n')
+}
+
+/** 把字符串拆为单条结构（仅在 U2/U3 过渡期使用；U3 完成后移除）*/
+export function manualSubItemsFromString(content: string): ManualSubItem[] {
+  if (!content.trim()) return []
+  return content
+    .split(/\n---\n/)
+    .map((block) => {
+      const [title, ...rest] = block.split('\n')
+      return { title: (title || '').trim(), content: rest.join('\n').trim() }
+    })
+    .filter((it) => it.title || it.content)
+}
+
+/** 取某段手动子项的数组形态（统一在 ManualSubItem[] 范型）*/
+export function getManualSubItemList(items: ManualSubItems[string], sectionIndex: number): ManualSubItem[] {
+  if (Array.isArray(items)) return items
+  if (typeof items === 'string') return manualSubItemsFromString(items)
+  return []
 }
 
 /** 选中的 KO：sectionIndex → [koId, koId, ...] */

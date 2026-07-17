@@ -69,9 +69,19 @@ public class ComposerController {
 
         Object manual = ctxMap.get("manualSubItems");
         if (manual instanceof Map) {
+            // U3 dual-read: array schema 或 string schema 兼容 (1 sprint 过渡期)
             for (Map.Entry<String, Object> e : ((Map<String, Object>) manual).entrySet()) {
                 int idx = Integer.parseInt(e.getKey());
-                ctx.manualSubItems.put(idx, String.valueOf(e.getValue()));
+                Object value = e.getValue();
+                // 1) JSON array [{...}, {...}] → 走 ManualSubItem[] 路径
+                // 2) String 旧 schema → String 路径 (向后兼容 1 sprint)
+                // 3) null → 跳过
+                if (value == null) continue;
+                if (value instanceof java.util.List) {
+                    ctx.manualSubItems.put(idx, value);
+                } else {
+                    ctx.manualSubItems.put(idx, String.valueOf(value));
+                }
             }
         }
 

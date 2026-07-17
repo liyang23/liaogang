@@ -56,13 +56,18 @@
             </el-select>
           </el-form-item>
           <el-form-item label="手动子项">
-            <el-input
-              v-model="manualSubItem"
-              type="textarea"
-              :rows="3"
-              placeholder="手动输入子项内容（多行）"
-              @input="onManualSubItemChange"
-            />
+            <div class="manual-subitem-entry">
+              <el-button size="small" type="primary" plain @click="openManualSubItemModal">
+                手动子项（{{ manualSubItemCount }} 项）
+              </el-button>
+              <ManualSubItemModal
+                v-model="manualSubItemModalVisible"
+                :section-index="section.sectionIndex"
+                :current="manualSubItems[section.sectionIndex] ?? ''"
+                :var-bindings="varBindings[section.sectionIndex] ?? {}"
+                @update="onManualSubItemsUpdated"
+              />
+            </div>
           </el-form-item>
         </el-form>
       </div>
@@ -79,7 +84,15 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { PrmSection, VarBindings, SelectedKOs, ManualSubItems } from '@/api/composer'
+import {
+  type PrmSection,
+  type VarBindings,
+  type SelectedKOs,
+  type ManualSubItems,
+  type ManualSubItem,
+  getManualSubItemList,
+} from '@/api/composer'
+import ManualSubItemModal from './ManualSubItemModal.vue'
 
 const props = defineProps<{
   section: PrmSection
@@ -92,13 +105,18 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:varBindings', sectionIndex: number, bindings: { [k: string]: string }): void
   (e: 'update:selectedKOs', sectionIndex: number, koIds: string[]): void
-  (e: 'update:manualSubItems', sectionIndex: number, content: string): void
+  (e: 'update:manualSubItems', sectionIndex: number, content: ManualSubItem[]): void
   (e: 'bind-var', sectionIndex: number): void
 }>()
 
 const expanded = ref(true)
 const selectedKOIds = ref<string[]>(props.selectedKOs[props.section.sectionIndex] || [])
-const manualSubItem = ref(props.manualSubItems[props.section.sectionIndex] || '')
+const manualSubItemModalVisible = ref(false)
+
+/** 当前 section 手动子项条目数（取自父组件 current prop，过渡期兼容 string 形态） */
+const manualSubItemCount = computed(() =>
+  getManualSubItemList(props.manualSubItems[props.section.sectionIndex] ?? '', props.section.sectionIndex).length,
+)
 
 /** 检测 content 是否含 {{var}} 占位 */
 const hasVarBinding = computed(() => /\{\{[^}]+\}\}/.test(props.section.content))
@@ -117,9 +135,13 @@ function onSelectedKOsChange(value: string[]) {
   emit('update:selectedKOs', props.section.sectionIndex, value)
 }
 
-function onManualSubItemChange(value: string) {
-  manualSubItem.value = value
-  emit('update:manualSubItems', props.section.sectionIndex, value)
+function openManualSubItemModal() {
+  manualSubItemModalVisible.value = true
+}
+
+/** 弹层内 Confirmed 后回调（占位：直接 emit array；U5 阶段补 dirty 检测 / 重复检测） */
+function onManualSubItemsUpdated(sectionIndex: number, items: ManualSubItem[]) {
+  emit('update:manualSubItems', sectionIndex, items)
 }
 </script>
 
@@ -143,5 +165,6 @@ function onManualSubItemChange(value: string) {
   overflow-y: auto;
 }
 .dynamic-section { margin-top: 12px; }
+.manual-subitem-entry { display: flex; align-items: center; gap: 12px; }
 .binding-info { margin-top: 12px; }
 </style>
