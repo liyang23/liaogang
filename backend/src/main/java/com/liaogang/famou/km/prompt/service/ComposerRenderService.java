@@ -124,7 +124,15 @@ public class ComposerRenderService {
             if (manualItem instanceof List) {
                 @SuppressWarnings("unchecked")
                 List<ManualSubItem> items = (List<ManualSubItem>) manualItem;
-                content = expandEachBlock(content, items);
+                // P1 #3 修复: 空 List 降级为 String 路径 (避免 NPE on items.get(0) / NPE in stream)
+                if (items.isEmpty()) {
+                    content = content.replace(
+                        "{{#each items}}" + extractEachBody(content) + "{{/each}}",
+                        ""
+                    );
+                } else {
+                    content = expandEachBlock(content, items);
+                }
             } else if (manualItem instanceof String) {
                 content = content.replace(
                     "{{#each items}}" + extractEachBody(content) + "{{/each}}",
