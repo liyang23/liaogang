@@ -655,3 +655,48 @@
   - **两处都改**：主目录（main 分支）+ worktree（feat/sprint-2-ko-and-permissions 分支）保持一致
   - **根治原理**：绝对路径与 process.cwd() 无关，无论 cwd 在 worktree 根或子目录都正确解析
   - **机器耦合代价**（已知）：换电脑要改路径，单人项目可接受；详见 `docs/solutions/tooling-decisions/stop-hook-absolute-paths.md`
+- v1.18.0 2026-07-17 17:30:00 liyang: Q-I4 §3 手动子项弹层 U1 sparring 协同 + 决议归档落地
+  - 创建 docs/sparring/2026-07-17-001-q-i4-section3-sparring-decisions.md 业务专家决议占位表（Round 1 minimum viable 8 项 + Round 2 跟进 7 项）
+  - 更新 origin brainstorm doc（35 项 P0/P1 fix 后的 2 轮 spec-doc-review 落地）的 Outstanding Questions 全部 13 项 User decision 标 [Resolved 2026-07-17] 状态
+  - 关联 Sprint 2 task pack (docs/tasks/2026-07-15-001-task-pack-sprint-2-ko-and-permissions.md) 与 Sprint 3 task pack (docs/tasks/2026-08-01-001-task-pack-sprint-3-governance-projects.md) Q-I4 引用闭环
+  - 在 worktree .worktrees/q-i4-section3-modal (分支 feat/q-i4-section3-modal) 中执行，与 main 分支隔离
+  - 占位决议待业务专家复审后正式生效 (user-visible)
+- v1.19.0 2026-07-17 18:30:00 liyang: §3 弹层前端骨架 U2 阶段落地（plan spec-work task #2）
+  - composer.ts ManualSubItem interface 落地 + ManualSubItems 升级为 union 形态（U2/U3 过渡期：`string | ManualSubItem[]`）+ manualSubItemsToString / manualSubItemsFromString / getManualSubItemList 三个工具函数
+  - 新增 frontend/src/components/ManualSubItemModal.vue：中央 Dialog 容器 + 行内列表模式骨架（R0a=Modal + R1b=行内列表占位决议）+ R-onboarding empty 态引导 + footer 工具栏（+ 新增 / 批量粘贴 / 取消 / 完成）+ 7 状态标注占位（origin R11c-trigger-condition 矩阵留待 U5 实施补）
+  - 修改 frontend/src/components/SectionCard.vue：L58-66 单一 textarea 替换为「手动子项（N 项）」按钮唤起 ManualSubItemModal；emit 类型从 string 升级到 ManualSubItem[]；新增 manual-subitem-entry CSS 类
+  - 修改 frontend/src/views/prompts/ComposerView.vue：onManualSubItemsUpdate 接收 ManualSubItem[]；OQ-16 assemblyCount 在 array 形态下按 items.length 计算（与 U3 阶段公式重推导对齐）
+  - 新增 frontend/src/test/components/ManualSubItemModal.test.ts：vitest 骨架 + 3 个 happy path 测试（empty 态 / string 转换）+ 8 个 it.todo 占位（origin 10 条 AE + R3b/R4b 后续占位）
+  - 占位决议待业务专家复审；R11c 7 状态完整 trigger 矩阵 + R10 校验 + R11 重复 + R4b dirty + R17a 兜底 + R3b 批量粘贴 + R-a11y-baseline + R12a 视觉一致性 全部留待 U5 实施阶段补全 (user-visible)
+- v1.20.0 2026-07-17 19:30:00 liyang: U3 ManualSubItems 4 端类型迁移 Phase 1-3 骨架 + dual-write fallback (user-visible)
+  - 新增 backend/src/main/java/com/liaogang/famou/km/prompt/dto/ManualSubItem.java: §3 手动子项单条 DTO（title/content 必填 + value/unit/lower_bound/upper_bound/range_type 可选业务字段）
+  - 修改 backend/.../ComposerRenderService.java:
+    - ComposeContext.manualSubItems 类型 Map<Integer, Object> union (String | List<ManualSubItem>) 兼容 dual-write
+    - mergeSectionContext 新增 List<ManualSubItem> 形态识别 → expandEachBlock 逐条拼接保留 {{title}}/{{content}}/{{value}}/{{unit}} 占位
+    - dual-write feature flag `prompt.manualSubItems.arraySchemaRation` 配置（Phase 1 默认 0% → Phase 6 升至 100%）
+    - computeAssemblyCount OQ-16 公式 U3 重推导：List 形态 = items.length（§3 演示值 38 = 38 装配），String 形态 = 1（dual-write 兼容 1 sprint）
+  - 修改 backend/.../ComposerController.java:
+    - parseContext dual-read 反序列化（array schema 或 string schema 自动识别） + null 跳过
+  - 新增 backend/.../ManualSubItemsMigrationTest.java:
+    - 5 个测试覆盖: 38 演示值 List 形态重放 / ComposeContext List 形态接收 / String 旧 schema dual-read fallback / null 跳过 / ManualSubItem DTO roundtrip 含业务字段
+  - 占位决议待业务专家复审;V9xxx migration conditional (取决于 Sprint 2 prm_section.content 是否够承载;Phase 6 gating = 客户端流量 ≥ 99% + 反序列化错误率 < 0.1%/天)
+- v1.21.0 2026-07-17 20:30:00 liyang: U4 跨段 varBindings + U5 校验重复检测骨架落地
+  - U4 — ManualSubItemModal.vue 内置 resolveVarBinding 函数（§3 子树内部; 不修改共享 markdown-renderer.ts）:
+    - R15b 命名空间归属 = `{section.sectionIndex}.{varName}` 局部约定（Plan A 实施路径）
+    - R7a 高亮色复用 §4-§7 已选 PAR（Plan B fallback 路径保留给 sparring 拍板翻转）
+    - 命名空间退化规则: 先查 `{sectionIdx}.{varKey}`, 退化 `{varKey}` 全局
+    - 断引用视觉信号 = 黄色提示（§7 PAR 解除后状态）
+  - SectionCard.vue 透传 varBindings prop 到 ManualSubItemModal（SectionCard 不 watch varBindings, 避免 props 嵌套循环）
+  - U5 — ManualSubItemModal.vue 加入校验重复 + dirty + 数值校验骨架:
+    - R11 重复检测: onBlur 后查重 + AE5 弹窗二选一「替换 / 取消」（去抖 300ms 后续接入）
+    - R4b dirty 三按钮互斥: Save Draft & Close / Discard & Close / Cancel（lastSnapshot 深比较占位; UI 完整接入 deferred）
+    - R10 数值字段校验: onValidate hook 在 R5 阶段 1 拍板业务字段启用后接入 async-validator
+    - R17a 兜底 emit 事件占位: 后端落库 5xx 实施阶段接 ComposerController 端
+    - R3b 批量粘贴占位: BatchPasteEnabled props + UI button; 完整 manual-sub-item-parser.ts 接入 deferred 到依赖稳定时
+- 占位决议待业务专家复审; Sprint 3 启动前 Q-I4 §3 弹层骨架可演示; U5 完整功能交付与 AE1-AE10 测试覆盖待 sprint 后续阶段
+- v1.22.0 2026-07-17 21:00:00 liyang: Q-I4 §3 弹层 全部 18 项 spar 决议正式生效（用户授权跳过复审, status=ratified） (user-visible)
+  - docs/sparring/2026-07-17-001-q-i4-section3-sparring-decisions.md frontmatter status: completed → ratified, 修订记录追加 2026-07-17 跳过复审条目
+  - docs/brainstorms/2026-07-16-001-q-i4-section3-manual-subitem-modal-requirements.md Outstanding Questions 段标题改为「全部 13 项已拍板正式生效」
+  - docs/plans/2026-07-17-001-feat-liaogang-section3-manual-subitem-modal-plan.md Summary / Decision Brief / Status 段同步标注「用户授权跳过业务专家复审, 全部 18 项决议正式生效」
+  - docs/tasks/2026-07-15-001-task-pack-sprint-2-ko-and-permissions.md 第 45 行 Q-I4 状态闭环 + 正式生效
+  - docs/tasks/2026-08-01-001-task-pack-sprint-3-governance-projects.md T310 risk_note 闭环 + 正式生效
