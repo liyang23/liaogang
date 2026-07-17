@@ -655,3 +655,16 @@
   - **两处都改**：主目录（main 分支）+ worktree（feat/sprint-2-ko-and-permissions 分支）保持一致
   - **根治原理**：绝对路径与 process.cwd() 无关，无论 cwd 在 worktree 根或子目录都正确解析
   - **机器耦合代价**（已知）：换电脑要改路径，单人项目可接受；详见 `docs/solutions/tooling-decisions/stop-hook-absolute-paths.md`
+- v1.18.0 2026-07-17 17:30:00 liyang: Q-I4 §3 手动子项弹层 U1 sparring 协同 + 决议归档落地
+  - 创建 docs/sparring/2026-07-17-001-q-i4-section3-sparring-decisions.md 业务专家决议占位表（Round 1 minimum viable 8 项 + Round 2 跟进 7 项）
+  - 更新 origin brainstorm doc（35 项 P0/P1 fix 后的 2 轮 spec-doc-review 落地）的 Outstanding Questions 全部 13 项 User decision 标 [Resolved 2026-07-17] 状态
+  - 关联 Sprint 2 task pack (docs/tasks/2026-07-15-001-task-pack-sprint-2-ko-and-permissions.md) 与 Sprint 3 task pack (docs/tasks/2026-08-01-001-task-pack-sprint-3-governance-projects.md) Q-I4 引用闭环
+  - 在 worktree .worktrees/q-i4-section3-modal (分支 feat/q-i4-section3-modal) 中执行，与 main 分支隔离
+  - 占位决议待业务专家复审后正式生效 (user-visible)
+- v1.19.0 2026-07-17 18:30:00 liyang: §3 弹层前端骨架 U2 阶段落地（plan spec-work task #2）
+  - composer.ts ManualSubItem interface 落地 + ManualSubItems 升级为 union 形态（U2/U3 过渡期：`string | ManualSubItem[]`）+ manualSubItemsToString / manualSubItemsFromString / getManualSubItemList 三个工具函数
+  - 新增 frontend/src/components/ManualSubItemModal.vue：中央 Dialog 容器 + 行内列表模式骨架（R0a=Modal + R1b=行内列表占位决议）+ R-onboarding empty 态引导 + footer 工具栏（+ 新增 / 批量粘贴 / 取消 / 完成）+ 7 状态标注占位（origin R11c-trigger-condition 矩阵留待 U5 实施补）
+  - 修改 frontend/src/components/SectionCard.vue：L58-66 单一 textarea 替换为「手动子项（N 项）」按钮唤起 ManualSubItemModal；emit 类型从 string 升级到 ManualSubItem[]；新增 manual-subitem-entry CSS 类
+  - 修改 frontend/src/views/prompts/ComposerView.vue：onManualSubItemsUpdate 接收 ManualSubItem[]；OQ-16 assemblyCount 在 array 形态下按 items.length 计算（与 U3 阶段公式重推导对齐）
+  - 新增 frontend/src/test/components/ManualSubItemModal.test.ts：vitest 骨架 + 3 个 happy path 测试（empty 态 / string 转换）+ 8 个 it.todo 占位（origin 10 条 AE + R3b/R4b 后续占位）
+  - 占位决议待业务专家复审；R11c 7 状态完整 trigger 矩阵 + R10 校验 + R11 重复 + R4b dirty + R17a 兜底 + R3b 批量粘贴 + R-a11y-baseline + R12a 视觉一致性 全部留待 U5 实施阶段补全 (user-visible)

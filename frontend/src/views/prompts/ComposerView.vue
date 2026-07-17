@@ -94,7 +94,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import SectionCard from '@/components/SectionCard.vue'
 import VariableBindingModal from '@/components/VariableBindingModal.vue'
-import { listPrmTemplates, estimateTokens, type PrmTemplate, type PrmSection, type VarBindings, type SelectedKOs, type ManualSubItems } from '@/api/composer'
+import { listPrmTemplates, estimateTokens, type PrmTemplate, type PrmSection, type VarBindings, type SelectedKOs, type ManualSubItems, type ManualSubItem } from '@/api/composer'
 import { render as renderMarkdown } from '@/utils/markdown-renderer'
 import { render as renderHandlebars } from '@/utils/handlebars'
 
@@ -140,7 +140,10 @@ const previewTokenColor = computed(() => {
   return 'success'
 })
 
-/** OQ-16 实际装配数 = selectedKOs.length + varBindings.size + manualSubItems.size */
+/** OQ-16 实际装配数 = selectedKOs.length + varBindings.size + manualSubItems.size
+ *  U3 阶段补：manualSubItems[k] 在 array 形态下 = items.length（已落地骨架）
+ *  string 过渡形态下按 1 section 算（与 U3 阶段 array.length 取齐时统一）
+ */
 const assemblyCount = computed(() => {
   let count = 0
   for (const k of Object.keys(selectedKOs.value)) {
@@ -150,7 +153,9 @@ const assemblyCount = computed(() => {
     count += Object.keys(varBindings.value[k]).length
   }
   for (const k of Object.keys(manualSubItems.value)) {
-    if (manualSubItems.value[k]) count += 1
+    const v = manualSubItems.value[k]
+    if (Array.isArray(v)) count += v.length
+    else if (typeof v === 'string' && v.trim()) count += 1
   }
   return count
 })
@@ -204,8 +209,8 @@ function onSelectedKOsUpdate(sectionIndex: number, koIds: string[]) {
   selectedKOs.value = { ...selectedKOs.value, [sectionIndex]: koIds }
 }
 
-function onManualSubItemsUpdate(sectionIndex: number, content: string) {
-  manualSubItems.value = { ...manualSubItems.value, [sectionIndex]: content }
+function onManualSubItemsUpdate(sectionIndex: number, items: ManualSubItem[]) {
+  manualSubItems.value = { ...manualSubItems.value, [sectionIndex]: items }
 }
 
 function onBindVarClick(sectionIndex: number) {
