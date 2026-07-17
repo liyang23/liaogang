@@ -668,3 +668,29 @@
   - 修改 frontend/src/views/prompts/ComposerView.vue：onManualSubItemsUpdate 接收 ManualSubItem[]；OQ-16 assemblyCount 在 array 形态下按 items.length 计算（与 U3 阶段公式重推导对齐）
   - 新增 frontend/src/test/components/ManualSubItemModal.test.ts：vitest 骨架 + 3 个 happy path 测试（empty 态 / string 转换）+ 8 个 it.todo 占位（origin 10 条 AE + R3b/R4b 后续占位）
   - 占位决议待业务专家复审；R11c 7 状态完整 trigger 矩阵 + R10 校验 + R11 重复 + R4b dirty + R17a 兜底 + R3b 批量粘贴 + R-a11y-baseline + R12a 视觉一致性 全部留待 U5 实施阶段补全 (user-visible)
+- v1.20.0 2026-07-17 19:30:00 liyang: U3 ManualSubItems 4 端类型迁移 Phase 1-3 骨架 + dual-write fallback (user-visible)
+  - 新增 backend/src/main/java/com/liaogang/famou/km/prompt/dto/ManualSubItem.java: §3 手动子项单条 DTO（title/content 必填 + value/unit/lower_bound/upper_bound/range_type 可选业务字段）
+  - 修改 backend/.../ComposerRenderService.java:
+    - ComposeContext.manualSubItems 类型 Map<Integer, Object> union (String | List<ManualSubItem>) 兼容 dual-write
+    - mergeSectionContext 新增 List<ManualSubItem> 形态识别 → expandEachBlock 逐条拼接保留 {{title}}/{{content}}/{{value}}/{{unit}} 占位
+    - dual-write feature flag `prompt.manualSubItems.arraySchemaRation` 配置（Phase 1 默认 0% → Phase 6 升至 100%）
+    - computeAssemblyCount OQ-16 公式 U3 重推导：List 形态 = items.length（§3 演示值 38 = 38 装配），String 形态 = 1（dual-write 兼容 1 sprint）
+  - 修改 backend/.../ComposerController.java:
+    - parseContext dual-read 反序列化（array schema 或 string schema 自动识别） + null 跳过
+  - 新增 backend/.../ManualSubItemsMigrationTest.java:
+    - 5 个测试覆盖: 38 演示值 List 形态重放 / ComposeContext List 形态接收 / String 旧 schema dual-read fallback / null 跳过 / ManualSubItem DTO roundtrip 含业务字段
+  - 占位决议待业务专家复审;V9xxx migration conditional (取决于 Sprint 2 prm_section.content 是否够承载;Phase 6 gating = 客户端流量 ≥ 99% + 反序列化错误率 < 0.1%/天)
+- v1.21.0 2026-07-17 20:30:00 liyang: U4 跨段 varBindings + U5 校验重复检测骨架落地
+  - U4 — ManualSubItemModal.vue 内置 resolveVarBinding 函数（§3 子树内部; 不修改共享 markdown-renderer.ts）:
+    - R15b 命名空间归属 = `{section.sectionIndex}.{varName}` 局部约定（Plan A 实施路径）
+    - R7a 高亮色复用 §4-§7 已选 PAR（Plan B fallback 路径保留给 sparring 拍板翻转）
+    - 命名空间退化规则: 先查 `{sectionIdx}.{varKey}`, 退化 `{varKey}` 全局
+    - 断引用视觉信号 = 黄色提示（§7 PAR 解除后状态）
+  - SectionCard.vue 透传 varBindings prop 到 ManualSubItemModal（SectionCard 不 watch varBindings, 避免 props 嵌套循环）
+  - U5 — ManualSubItemModal.vue 加入校验重复 + dirty + 数值校验骨架:
+    - R11 重复检测: onBlur 后查重 + AE5 弹窗二选一「替换 / 取消」（去抖 300ms 后续接入）
+    - R4b dirty 三按钮互斥: Save Draft & Close / Discard & Close / Cancel（lastSnapshot 深比较占位; UI 完整接入 deferred）
+    - R10 数值字段校验: onValidate hook 在 R5 阶段 1 拍板业务字段启用后接入 async-validator
+    - R17a 兜底 emit 事件占位: 后端落库 5xx 实施阶段接 ComposerController 端
+    - R3b 批量粘贴占位: BatchPasteEnabled props + UI button; 完整 manual-sub-item-parser.ts 接入 deferred 到依赖稳定时
+- 占位决议待业务专家复审; Sprint 3 启动前 Q-I4 §3 弹层骨架可演示; U5 完整功能交付与 AE1-AE10 测试覆盖待 sprint 后续阶段

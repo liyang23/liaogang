@@ -64,6 +64,7 @@
                 v-model="manualSubItemModalVisible"
                 :section-index="section.sectionIndex"
                 :current="manualSubItems[section.sectionIndex] ?? ''"
+                :var-bindings="varBindings[section.sectionIndex] ?? {}"
                 @update="onManualSubItemsUpdated"
               />
             </div>
