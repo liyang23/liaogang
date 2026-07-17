@@ -700,3 +700,13 @@
   - docs/plans/2026-07-17-001-feat-liaogang-section3-manual-subitem-modal-plan.md Summary / Decision Brief / Status 段同步标注「用户授权跳过业务专家复审, 全部 18 项决议正式生效」
   - docs/tasks/2026-07-15-001-task-pack-sprint-2-ko-and-permissions.md 第 45 行 Q-I4 状态闭环 + 正式生效
   - docs/tasks/2026-08-01-001-task-pack-sprint-3-governance-projects.md T310 risk_note 闭环 + 正式生效
+- v1.23.0 2026-07-17 22:00:00 liyang: Sprint 3 task pack spec-doc-review 5 reviewer 89 findings auto-resolved (P0 8 / P1 16 / P2 32 / P3 24 / advisory 5) (user-visible)
+  - 删除 R12a 不存在 ID 引用 (T311 risk_note 改 frontend-standards §7.1-7.3 + V3 视觉对比规范)
+  - (R-09) 错引删除 (改为 R6 实施细节; 二期 R-09 多租户 scope 边界未渗入)
+  - T308 AuditLogEntity 改 Modify + AuditLogService 命名统一 (与 Sprint 1 落地实体一致) + AuditAction enum 集中管理
+  - T308 V9007 PK 复合 (id + created_at) 支持按月分区表
+  - T302 LlmSuggestionService 显式 wrapper over Sprint 1 已落地的 DeepSeekClient (避免双重 LLM 配额扣减)
+  - T313 pom.xml scope: pdfbox + jodconverter-local 从 provided 改 compile (避免 K8s 部署 NoClassDefFoundError)
+  - T311 prose 显式"3 独立子模块"边界 (SG-6 拆分建议保留为 spec-plan 修订)
+  - spec-first tasks validate 重跑: task_pack_validity: valid / deterministic_handoff: true / spec_id: matched / source_plan_hash: matched / task_pack_contract: valid
+  - 待 spec-plan 修订阶段处理的 P2/P3 项 (61 项) 保留为 FYI 在 reviewer findings
